@@ -1,10 +1,10 @@
 import { create } from 'zustand';
+import { immer } from 'zustand/middleware/immer';
 
-import calculateScore from '../utils/calculateScore';
+import calculateCount from '../utils/calculateCount';
 import shuffleDeck from '../utils/shuffleDeck';
 import { ICard, IDeck } from '../lib/card-types';
-// import shuffleDeck from '../utils/shuffleDeck';
-// import calculateScore from '../utils/calculateScore';
+import { minCardsTillShuffle } from '../utils/gameRules';
 
 const suits = ['♠', '♥', '♦', '♣'];
 const values = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'];
@@ -32,13 +32,18 @@ const drawCard = (deck: IDeck) => {
   return card;
 };
 
-export type IGameState = {
+type State = {
   deck: ICard[];
   dealerHand: ICard[];
   playerHand: ICard[];
   isGameOver: boolean;
+  startedGame: boolean;
   message: string;
-  deal: () => void;
+};
+
+type Actions = {
+  initDeck: () => void;
+  dealRound: () => void;
   hit: () => void;
   hitDealer: () => void;
   endGame: () => void;
@@ -46,51 +51,73 @@ export type IGameState = {
   dealerCount(): number;
 };
 
-export const useStore = create<IGameState>((set, get) => ({
-  deck: [],
-  dealerHand: [],
-  playerHand: [],
-  isGameOver: false,
-  message: '',
-  deal: () => {
-    const newDeck = shuffleDeck(createDeck());
-    const newDealerHand = [drawCard(newDeck), drawCard(newDeck)];
-    const newPlayerHand = [drawCard(newDeck), drawCard(newDeck)];
-    set({ deck: newDeck, dealerHand: newDealerHand, playerHand: newPlayerHand, isGameOver: false, message: '' });
-  },
-  hit: () => {
-    set(state => {
-      const newPlayerHand = [...state.playerHand];
-      newPlayerHand.push(drawCard(state.deck));
-      if (calculateScore(newPlayerHand) > 21) {
-        return { playerHand: newPlayerHand, isGameOver: true, message: 'Busted! You lost.' };
-      } else {
-        return { playerHand: newPlayerHand };
+export const useGameStore = create(
+  immer<State & Actions>((set, get) => ({
+    deck: [],
+    dealerHand: [],
+    playerHand: [],
+    startedGame: false,
+    isGameOver: false,
+    message: '',
+    initDeck: () => {
+      set({
+        deck: shuffleDeck(createDeck()),
+      });
+    },
+    dealRound: () => {
+      let deck = [...get().deck];
+      if (deck.length < minCardsTillShuffle) {
+        deck = shuffleDeck(createDeck());
       }
-    });
-  },
-  hitDealer() {
-    set(state => {
-      const newDealerHand = [...state.dealerHand];
-      newDealerHand.push(drawCard(state.deck));
-      return { dealerHand: newDealerHand };
-    });
-  },
-  endGame: () => {
-    const playerCount = get().playerCount();
-    const dealerCount = get().dealerCount();
-    let endGameMessage = '';
-    if (dealerCount > 21) {
-      endGameMessage = 'Dealer busts. You win!';
-    } else if (dealerCount > playerCount) {
-      endGameMessage = 'Dealer wins!';
-    } else if (dealerCount < playerCount) {
-      endGameMessage = 'You win!';
-    } else {
-      endGameMessage = 'Push.';
-    }
-    set({ isGameOver: true, message: endGameMessage });
-  },
-  playerCount: () => calculateScore(get().playerHand),
-  dealerCount: () => calculateScore(get().dealerHand),
-}));
+      const newDealerHand = [drawCard(deck), drawCard(deck)];
+      const newPlayerHand = [drawCard(deck), drawCard(deck)];
+      set({
+        deck,
+        dealerHand: newDealerHand,
+        playerHand: newPlayerHand,
+        startedGame: true,
+        isGameOver: false,
+        message: '',
+      });
+      return true;
+    },
+    hit: () => {
+      set(state => {
+        const newPlayerHand = [...state.playerHand];
+        newPlayerHand.push(drawCard(state.deck));
+        if (calculateCount(newPlayerHand) > 21) {
+          state.isGameOver = true;
+          state.playerHand = newPlayerHand;
+          state.message = 'Busted! You lost.';
+        } else {
+          state.playerHand = newPlayerHand;
+        }
+      });
+    },
+    hitDealer() {
+      set(state => {
+        state.dealerHand.push(drawCard(state.deck));
+      });
+    },
+    endGame: () => {
+      const playerCount = get().playerCount();
+      const dealerCount = get().dealerCount();
+      let endGameMessage = '';
+      if (dealerCount > 21) {
+        endGameMessage = 'Dealer busts. You win!';
+      } else if (dealerCount > playerCount) {
+        endGameMessage = 'Dealer wins!';
+      } else if (dealerCount < playerCount) {
+        endGameMessage = 'You win!';
+      } else {
+        endGameMessage = 'Push.';
+      }
+      set({
+        isGameOver: true,
+        message: endGameMessage,
+      });
+    },
+    playerCount: () => calculateCount(get().playerHand),
+    dealerCount: () => calculateCount(get().dealerHand),
+  })),
+);

@@ -3,3 +3,4 @@ export type ICard = {
   suit: string;
 };
 export type IDeck = ICard[];
+export type IHand = ICard[];

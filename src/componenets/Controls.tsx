@@ -1,5 +1,6 @@
 import React from 'react';
-import { useStore } from '../store/gameStore';
+import { useGameStore } from '../store/gameStore';
+import { shallow } from 'zustand/shallow';
 
 interface ControlsProps {
   onHit: () => void;
@@ -8,25 +9,32 @@ interface ControlsProps {
 }
 
 const Controls: React.FC<ControlsProps> = ({ onDeal, onHit, onStand }) => {
-  const isGameOver = useStore(state => state.isGameOver);
+  const { isGameOver, startedGame } = useGameStore(
+    state => ({
+      isGameOver: state.isGameOver,
+      startedGame: state.startedGame,
+    }),
+    shallow,
+  );
+
   return (
     <div className='flex justify-around my-4'>
       <button
-        disabled={!isGameOver}
+        disabled={startedGame && !isGameOver}
         className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
         onClick={onDeal}
       >
         Deal
       </button>
       <button
-        disabled={isGameOver}
+        disabled={!startedGame || isGameOver}
         className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
         onClick={onHit}
       >
         Hit
       </button>
       <button
-        disabled={isGameOver}
+        disabled={!startedGame || isGameOver}
         className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded'
         onClick={onStand}
       >
