@@ -19,21 +19,21 @@ export default function Player({ playerId }: PlayerProps) {
   const playerHasCards = player.hand.length > 0;
   const counts = didGameStart && playerHasCards ? calculateHand(player.hand) : null;
   const didBust = counts?.validCounts.length === 0 && counts?.bustCount > 21;
-  const stand = useGameStore(state => state.stand);
+  const setStandInfo = useGameStore(state => state.setStandInfo);
   const finalCount = player.finalCount;
   const hasBlackjack = useHasBlackjack(player.hand);
 
   useEffect(() => {
     if (readyForPlayingFirstRound && hasBlackjack) {
-      stand(playerId);
+      setStandInfo(playerId);
     }
-  }, [readyForPlayingFirstRound, hasBlackjack, playerId, stand]);
+  }, [readyForPlayingFirstRound, hasBlackjack, playerId, setStandInfo]);
 
   useEffect(() => {
     if (didBust) {
-      stand(playerId);
+      setStandInfo(playerId);
     }
-  }, [didBust, playerId, stand]);
+  }, [didBust, playerId, setStandInfo]);
 
   return (
     <div className='player border border-gray-500 rounded p-4 shadow-lg flex flex-col items-center gap-2 w-1/3'>
