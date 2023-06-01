@@ -1,0 +1,62 @@
+// .player {
+//     display: flex;
+//     flex-direction: column;
+//     align-items: center;
+//     gap: 20px;
+//     background-color: #F0F0F0;
+//     border: 1px solid #CCCCCC;
+//     border-radius: 10px;
+//     padding: 20px;
+//     box-shadow: 0px 0px 10px 0px rgba(0, 0, 0, 0.15);
+//     width: 200px;
+
+//     .player-info {
+//         font-size: 1.25em;
+//         font-weight: bold;
+//         text-align: center;
+//         margin-bottom: 10px;
+//     }
+
+//     .hand {
+//         display: flex;
+//         justify-content: center;
+//         gap: 20px;
+//     }
+
+//     .money,
+//     .bet {
+//         text-align: center;
+//     }
+
+//     .actions {
+//         display: flex;
+//         justify-content: space-between;
+//         gap: 20px;
+
+//         button {
+//             background-color: #007BFF;
+//             color: white;
+//             font-weight: bold;
+//             padding: 10px 20px;
+//             border-radius: 5px;
+//             transition: background-color 0.2s ease;
+
+//             &:hover {
+//                 background-color: #0056b3;
+//             }
+//         }
+//     }
+// }
+
+button {
+    &.disabled {
+        --tw-bg-opacity: 1;
+        background-color: rgb(156 163 175 / var(--tw-bg-opacity));
+        cursor: not-allowed;
+
+        &:hover {
+            background-color: rgb(156 163 175 / var(--tw-bg-opacity));
+            ;
+        }
+    }
+}
