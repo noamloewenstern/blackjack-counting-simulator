@@ -13,15 +13,22 @@ export default function Player({ playerId }: PlayerProps) {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
   const player = useGameStore(state => state.players.find(p => p.id === playerId))!;
 
-  // const isCurrentTurn = useGameStore(state => state.currentPlayerId === playerId);
+  const isCurrentTurn = useGameStore(state => state.currentPlayerId === player.id);
   const readyForPlayingFirstRound = useGameStore(state => state.readyForPlayingFirstRound);
   const didGameStart = useGameStore(state => state.didGameStart);
   const playerHasCards = player.hand.length > 0;
   const counts = didGameStart && playerHasCards ? calculateHand(player.hand) : null;
   const didBust = counts?.validCounts.length === 0 && counts?.bustCount > 21;
+  const stand = useGameStore(state => state.stand);
   const setStandInfo = useGameStore(state => state.setStandInfo);
   const finalCount = player.finalCount;
   const hasBlackjack = useHasBlackjack(player.hand);
+
+  useEffect(() => {
+    if (isCurrentTurn && hasBlackjack) {
+      stand(playerId);
+    }
+  }, [isCurrentTurn, hasBlackjack, stand, playerId]);
 
   useEffect(() => {
     if (readyForPlayingFirstRound && hasBlackjack) {
