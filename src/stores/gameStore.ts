@@ -64,11 +64,11 @@ type GameStore = {
 
 type GameStoreActions = {
   hit: (playerId: PlayerId) => void;
-  stand: (playerId: PlayerId) => void;
+  stand: (playerId: PlayerId) => Promise<void>;
   setStandInfo: (playerId: PlayerId) => void;
   double: (playerId: PlayerId) => void;
 
-  nextTurn: () => void;
+  nextTurn: () => Promise<void>;
   dealToDealer: () => Promise<void>;
 
   determineOutcome: (playerId: PlayerId) => 'lose' | 'push' | 'win' | 'blackjack'; // This could return a string indicating win, lose, or push
@@ -83,6 +83,7 @@ type GameStoreActions = {
   placeBet: (playerId: PlayerId, betAmount: number) => void;
   addMoney: (playerId: PlayerId, money: number) => void;
   setPlayerReady: (playerId: PlayerId) => void;
+  currentPlayer: (stateStore?: GameStore) => IPlayer;
 };
 const getPlayerById = (state: GameStore, playerId: PlayerId) => state.players.find(player => player.id === playerId)!;
 export const useGameStore = create(
@@ -126,21 +127,25 @@ export const useGameStore = create(
 
     setStandInfo: (playerId: PlayerId) => {
       set(state => {
-        const player = state.players.find(player => player.id === playerId)!;
+        const player = getPlayerById(state, playerId);
         const counts = calculateHand(player.hand);
         const finalCount = counts.validCounts[0] || counts.bustCount;
         player.finished = true;
         player.finalCount = finalCount;
       });
     },
-    stand: (playerId: PlayerId) => {
+    stand: async (playerId: PlayerId) => {
       get().setStandInfo(playerId);
-      get().nextTurn();
+      await get().nextTurn();
     },
 
     nextTurn: async () => {
+      if (get().currentPlayerId === 'dealer') {
+        get().dealToDealer();
+        return;
+      }
       set(state => {
-        const player = state.players.find(p => p.id === state.currentPlayerId)!;
+        const player = state.currentPlayer(state);
         // const curPlayerIndex = state.players.findIndex(p => p.id === player.id);
         const curPlayerIndex = player.id;
 
@@ -150,6 +155,10 @@ export const useGameStore = create(
       });
       if (get().currentPlayerId === 'dealer') {
         get().dealToDealer();
+        return;
+      }
+      if (isBlackJack(get().currentPlayer().hand)) {
+        await get().nextTurn();
       }
     },
     dealToDealer: async () => {
@@ -209,16 +218,20 @@ export const useGameStore = create(
       return 'win';
     },
     runDealerHasBlackjackFlow: async () => {
-      const anyPlayerHaveBlackjack = get().players.some(p => isBlackJack(p.hand));
-      if (!anyPlayerHaveBlackjack) {
-        await sleep(1000);
-        set(state => {
-          state.players.forEach(player => {
-            state.setStandInfo(player.id);
-          });
-          state.currentPlayerId = 'dealer';
-        });
-        get().dealToDealer();
+      // const anyPlayerHaveBlackjack = get().players.some(p => isBlackJack(p.hand));
+      // if (!anyPlayerHaveBlackjack) {
+      //   await sleep(1000);
+      //   set(state => {
+      //     state.players.forEach(player => {
+      //       state.setStandInfo(player.id);
+      //     });
+      //     state.currentPlayerId = 'dealer';
+      //   });
+      //   get().dealToDealer();
+
+      // }
+      for (const player of get().players) {
+        await get().stand(player.id);
       }
     },
 
@@ -289,6 +302,12 @@ export const useGameStore = create(
           }
         });
       });
+    },
+
+    currentPlayer: (stateStore?: GameStore) => {
+      const state = stateStore ?? get();
+      const player = state.players.find(p => p.id === state.currentPlayerId)!;
+      return player;
     },
 
     outcome: '',

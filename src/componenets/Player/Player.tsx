@@ -59,11 +59,13 @@ export default function Player({ playerId }: PlayerProps) {
           <Card card={card} key={index} />
         ))}
       </div>
-      {!didGameStart ? (
-        <BetControls player={player} />
-      ) : (
-        !player.finished && playerHasCards && !hasBlackjack && readyForPlayingFirstRound && <Controls player={player} />
-      )}
+      {!didGameStart && <BetControls player={player} />}
+      {didGameStart &&
+        !player.finished &&
+        !finalCount &&
+        playerHasCards &&
+        !hasBlackjack &&
+        readyForPlayingFirstRound && <Controls player={player} />}
     </div>
   );
 }
