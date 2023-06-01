@@ -2,11 +2,11 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { mountStoreDevtool } from 'simple-zustand-devtools';
-// import zukeeper from 'zukeeper';
 import { useDeckStore } from './deckStore';
 import { Card, Hand } from '../lib/deck';
 import { calculateHand, isBlackJack } from '../lib/calculateHand';
 import { sleep } from '../utils/helpers';
+import { BlackjackStrategy } from '../lib/strategies/utils';
 
 export const isAce = (card: Card) => card.number === 'A';
 export type PlayerId = 0 | 1 | 2;
@@ -16,7 +16,7 @@ export type IPlayer = {
   hand: Hand;
   bet: number;
   balance: number;
-  stratergy: 'interactive' | 'perfect-blackjack' | 'counting';
+  strategy: BlackjackStrategy;
   finalCount?: number;
   ready: boolean;
   finished: boolean;
@@ -27,7 +27,7 @@ const initPlayers: IPlayer[] = [
     hand: [],
     bet: 10,
     balance: 10_000,
-    stratergy: 'interactive',
+    strategy: 'interactive',
     ready: true,
     finished: false,
   },
@@ -36,7 +36,7 @@ const initPlayers: IPlayer[] = [
     hand: [],
     bet: 10,
     balance: 10_000,
-    stratergy: 'perfect-blackjack',
+    strategy: 'perfect-blackjack',
     ready: true,
     finished: false,
   },
@@ -45,7 +45,7 @@ const initPlayers: IPlayer[] = [
     hand: [],
     bet: 10,
     balance: 10_000,
-    stratergy: 'counting',
+    strategy: 'counting',
     ready: true,
     finished: false,
   },
