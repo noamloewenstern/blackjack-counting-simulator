@@ -201,7 +201,6 @@ export const useGameStore = create(
       const dealerFinalCount = validCounts[0] || bustCount;
       set({ dealerFinalCount, currentPlayerId: 'endGame' });
       await sleep(500);
-      // set({  });
       get().finalizePlayersBalance();
     },
 
@@ -227,24 +226,14 @@ export const useGameStore = create(
       return 'win';
     },
     runDealerHasBlackjackFlow: async () => {
-      // const anyPlayerHaveBlackjack = get().players.some(p => isBlackJack(p.hand));
-      // if (!anyPlayerHaveBlackjack) {
-      //   await sleep(1000);
-      //   set(state => {
-      //     state.players.forEach(player => {
-      //       state.setStandInfo(player.id);
-      //     });
-      //     state.currentPlayerId = 'dealer';
-      //   });
-      //   get().dealToDealer();
-
-      // }
       for (const player of get().players) {
-        await get().stand(player.id);
+        get().setStandInfo(player.id);
       }
+      set({ currentPlayerId: 'dealer' });
+      await get().dealToDealer();
     },
 
-    startGame: async ({ shuffle: shouldShuffle = false } = {}) => {
+    startGame: async ({ shuffle: shouldShuffle } = {}) => {
       set({ didGameStart: true });
       const { shuffle, deck } = useDeckStore.getState();
       if (shouldShuffle || !deck.length) {
@@ -293,12 +282,13 @@ export const useGameStore = create(
           state.dealer.push(drawCard());
         });
       }
-      await sleep(300);
-      set({ currentPlayerId: initPlayers[0].id });
       if (isBlackJack(get().dealer)) {
         await sleep(300);
         await get().runDealerHasBlackjackFlow();
+        return;
       }
+      await sleep(300);
+      set({ currentPlayerId: initPlayers[0].id });
     },
     finalizePlayersBalance: () => {
       set(state => {
