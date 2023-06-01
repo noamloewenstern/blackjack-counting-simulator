@@ -19,6 +19,7 @@
     "immer": "^10.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "simple-zustand-devtools": "^1.1.0",
     "xstate": "^4.37.2",
     "zustand": "^4.3.8",
     "zustand-middleware-xstate": "^2.0.0"
@@ -26,6 +27,7 @@
   "devDependencies": {
     "@total-typescript/ts-reset": "github:total-typescript/ts-reset",
     "@types/jest": "^29.5.1",
+    "@types/node": "^20.2.5",
     "@types/react": "^18.2.6",
     "@types/react-dom": "^18.2.4",
     "@typescript-eslint/eslint-plugin": "^5.59.6",

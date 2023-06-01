@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-
+import { mountStoreDevtool } from 'simple-zustand-devtools';
+// import zukeeper from 'zukeeper';
 import { useDeckStore } from './deckStore';
 import { Card, Hand } from '../lib/deck';
 import { calculateHand, isBlackJack } from '../lib/calculateHand';
@@ -243,7 +244,7 @@ export const useGameStore = create(
       }
     },
 
-    startGame: async ({ shuffle: shouldShuffle } = {}) => {
+    startGame: async ({ shuffle: shouldShuffle = false } = {}) => {
       set({ didGameStart: true });
       const { shuffle, deck } = useDeckStore.getState();
       if (shouldShuffle || !deck.length) {
@@ -253,7 +254,7 @@ export const useGameStore = create(
       await sleep(200);
       set({ readyForPlayingFirstRound: true });
     },
-    restartGame: async ({ shuffle } = {}) => {
+    restartGame: async ({ shuffle = false } = {}) => {
       get().initDealState();
       await get().startGame({ shuffle });
     },
@@ -349,3 +350,7 @@ export const useGameStore = create(
     //
   })),
 );
+
+if (process.env.NODE_ENV === 'development') {
+  mountStoreDevtool('GameStore', useGameStore);
+}
