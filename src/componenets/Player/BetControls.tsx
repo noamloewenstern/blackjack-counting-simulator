@@ -14,6 +14,7 @@ export default function BetControls({ player }: BetProps) {
     }
     setPlayerReady(player.id);
   };
+  const disablePlay = player.bet === 0;
   return (
     <div className='flex flex-wrap justify-center gap-4 max-w-[400px] mx-auto'>
       {!isPlayerReady ? (
@@ -26,7 +27,10 @@ export default function BetControls({ player }: BetProps) {
           <BetButton player={player} amount={100} />
           <button
             onClick={handleReady}
-            className='bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-2'
+            disabled={disablePlay}
+            className={`${
+              disablePlay ? 'disabled' : ''
+            } bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded mb-2`}
           >
             Ready
           </button>
