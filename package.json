@@ -11,10 +11,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@xstate/cli": "^0.5.1",
+    "@xstate/graph": "^1.4.2",
+    "@xstate/immer": "^0.3.2",
+    "@xstate/inspect": "^0.8.0",
+    "@xstate/react": "^3.2.2",
     "immer": "^10.0.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "zustand": "^4.3.8"
+    "xstate": "^4.37.2",
+    "zustand": "^4.3.8",
+    "zustand-middleware-xstate": "^2.0.0"
   },
   "devDependencies": {
     "@total-typescript/ts-reset": "github:total-typescript/ts-reset",
