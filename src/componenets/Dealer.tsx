@@ -10,7 +10,7 @@ function DealerHand() {
   const didGameStart = dealer.length > 0;
   const currentPlayerId = useGameStore(state => state.currentPlayerId);
   const didGameEnd = currentPlayerId === 'endGame';
-  const counts = didGameStart && dealer.length > 0 ? calculateHand(dealer) : undefined;
+  const counts = didGameStart && dealer.length >= 2 ? calculateHand(dealer) : undefined;
   const dealerHasBlackjack = useHasBlackjack(dealer);
   const dealerOutcomeMessage = didGameEnd && dealerFinalCount > 21 ? 'Bust' : dealerHasBlackjack ? 'Blackjack!' : '';
 

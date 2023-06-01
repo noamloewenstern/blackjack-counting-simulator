@@ -27,7 +27,7 @@ export const createDeck = () => {
       newDeck.push({ number: cardNumbers[j], suit: suits[i] });
     }
   }
-  return blackJackDealCards[1].concat(newDeck);
+  return blackJackDealCards[0].concat(newDeck);
 };
 const blackJackDealCards: Card[][] = [
   [
