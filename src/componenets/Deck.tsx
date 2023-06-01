@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDeckStore } from '../stores/deckStore';
 import { useGameStore } from '../stores/gameStore';
 
@@ -10,13 +10,27 @@ const Deck = () => {
   const dealerFinalCount = useGameStore(state => state.dealerFinalCount);
   const didGameStart = useGameStore(state => state.didGameStart);
   const didGameEnd = didGameStart && dealerFinalCount > 0;
-  const [clickedStartedGame, setClickedStartedGame] = useState(false);
-  const allPlayersAreReady = useGameStore(state => state.players.every(player => player.ready));
+  // const [clickedStartedGame, setClickedStartedGame] = useState(false);
+  const players = useGameStore(state => state.players);
+  const areAllPlayersReady = players.every(player => player.ready);
+  const [waitingForAllPlayersToBeReady, setWaitingForAllPlayersToBeReady] = useState(false);
 
   const handleStartGame = () => {
-    setClickedStartedGame(true);
+    // setClickedStartedGame(true);
     startGame();
+    // setWaitingForAllPlayersToBeReady(false);
   };
+  const handleDealAnotherRound = () => {
+    initDealState();
+    setWaitingForAllPlayersToBeReady(true);
+  };
+
+  useEffect(() => {
+    if (waitingForAllPlayersToBeReady && areAllPlayersReady) {
+      startGame();
+    }
+  }, [areAllPlayersReady, startGame, waitingForAllPlayersToBeReady]);
+
   return (
     <>
       <div className='flex'>
@@ -36,12 +50,12 @@ const Deck = () => {
             )} */}
           </div>
 
-          {allPlayersAreReady && !didGameStart && (
+          {!didGameStart && areAllPlayersReady && (
             <button
-              disabled={!allPlayersAreReady}
+              disabled={!areAllPlayersReady}
               onClick={handleStartGame}
               className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${
-                !allPlayersAreReady && 'disabled'
+                !areAllPlayersReady && 'disabled'
               }`}
             >
               Start Game
@@ -50,7 +64,7 @@ const Deck = () => {
 
           {didGameEnd && (
             <button
-              onClick={initDealState}
+              onClick={handleDealAnotherRound}
               className='bg-blue-500 hover:bg-blue-700
        text-white font-bold py-2 px-4 rounded disabled:hover:pointer-events-none disabled:hover'
             >
@@ -59,7 +73,7 @@ const Deck = () => {
           )}
         </div>
       </div>
-      {!allPlayersAreReady && (
+      {!areAllPlayersReady && (
         <h2 className={`bg-orange-800 fixed text-white font-bold py-2 px-4 rounded top-1/4`}>Setup Bets!</h2>
       )}
     </>

@@ -55,6 +55,11 @@ type GameStore = {
   players: IPlayer[];
   currentPlayerId: 'init' | PlayerId | 'dealer' | 'endGame';
   dealerFinalCount: number;
+
+  didGameStart: boolean;
+  readyForPlayingFirstRound: boolean;
+
+  outcome: string;
 };
 
 type GameStoreActions = {
@@ -71,8 +76,6 @@ type GameStoreActions = {
   runDealerHasBlackjackFlow: () => void;
   startGame: (options?: { shuffle?: boolean }) => Promise<void>;
   startDealRound: () => Promise<void>;
-  didGameStart: boolean;
-  readyForPlayingFirstRound: boolean;
   isDealerTurn: () => boolean;
   restartGame: (options?: { shuffle?: boolean }) => Promise<void>;
   initDealState: () => void;
@@ -80,7 +83,6 @@ type GameStoreActions = {
   placeBet: (playerId: PlayerId, betAmount: number) => void;
   addMoney: (playerId: PlayerId, money: number) => void;
   setPlayerReady: (playerId: PlayerId) => void;
-  outcome: string;
 };
 const getPlayerById = (state: GameStore, playerId: PlayerId) => state.players.find(player => player.id === playerId)!;
 export const useGameStore = create(
@@ -267,9 +269,7 @@ export const useGameStore = create(
           state.dealer.push(drawCard());
         });
       }
-      set(state => {
-        state.currentPlayerId = initPlayers[0].id;
-      });
+      set({ currentPlayerId: initPlayers[0].id });
       if (isBlackJack(get().dealer)) {
         get().runDealerHasBlackjackFlow();
       }

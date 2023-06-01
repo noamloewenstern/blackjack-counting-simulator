@@ -22,7 +22,6 @@ export default function Player({ playerId }: PlayerProps) {
   const stand = useGameStore(state => state.stand);
   const finalCount = player.finalCount;
   const hasBlackjack = useHasBlackjack(player.hand);
-  console.log(`${playerId} hasBlackjack`, hasBlackjack);
 
   useEffect(() => {
     if (readyForPlayingFirstRound && hasBlackjack) {
