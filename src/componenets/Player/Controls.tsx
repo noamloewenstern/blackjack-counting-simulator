@@ -9,6 +9,15 @@ export default function Controls({ player }: ControlsProps) {
   const double = useGameStore(state => state.double);
   const isCurrentTurn = useGameStore(state => state.currentPlayerId === player.id);
 
+  const handleDouble = async () => {
+    try {
+      await double(player.id);
+    } catch (err) {
+      console.log(err);
+      alert(err);
+    }
+  };
+
   return (
     <div className='actions flex justify-center gap-4'>
       <button
@@ -23,7 +32,7 @@ export default function Controls({ player }: ControlsProps) {
 
       <button
         disabled={!isCurrentTurn}
-        onClick={() => double(player.id)}
+        onClick={handleDouble}
         className={`${isCurrentTurn ? 'bg-purple-600 hover:bg-purple-700' : 'disabled'}
      text-white font-bold py-2 px-4 rounded
    `}

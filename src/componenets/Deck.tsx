@@ -10,26 +10,17 @@ const Deck = () => {
   const dealerFinalCount = useGameStore(state => state.dealerFinalCount);
   const didGameStart = useGameStore(state => state.didGameStart);
   const didGameEnd = didGameStart && dealerFinalCount > 0;
-  // const [clickedStartedGame, setClickedStartedGame] = useState(false);
+
   const players = useGameStore(state => state.players);
   const areAllPlayersReady = players.every(player => player.ready);
-  const [waitingForAllPlayersToBeReady, setWaitingForAllPlayersToBeReady] = useState(false);
 
-  const handleStartGame = () => {
+  const handleStartGame = async () => {
     // setClickedStartedGame(true);
-    startGame();
-    // setWaitingForAllPlayersToBeReady(false);
+    await startGame();
   };
   const handleDealAnotherRound = () => {
     initDealState();
-    setWaitingForAllPlayersToBeReady(true);
   };
-
-  useEffect(() => {
-    if (waitingForAllPlayersToBeReady && areAllPlayersReady) {
-      startGame();
-    }
-  }, [areAllPlayersReady, startGame, waitingForAllPlayersToBeReady]);
 
   return (
     <>

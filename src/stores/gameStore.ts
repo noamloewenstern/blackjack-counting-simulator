@@ -63,17 +63,17 @@ type GameStore = {
 };
 
 type GameStoreActions = {
-  hit: (playerId: PlayerId) => void;
+  hit: (playerId: PlayerId) => Promise<void>;
   stand: (playerId: PlayerId) => Promise<void>;
   setStandInfo: (playerId: PlayerId) => void;
-  double: (playerId: PlayerId) => void;
+  double: (playerId: PlayerId) => Promise<void>;
 
   nextTurn: () => Promise<void>;
   dealToDealer: () => Promise<void>;
 
   determineOutcome: (playerId: PlayerId) => 'lose' | 'push' | 'win' | 'blackjack'; // This could return a string indicating win, lose, or push
 
-  runDealerHasBlackjackFlow: () => void;
+  runDealerHasBlackjackFlow: () => Promise<void>;
   startGame: (options?: { shuffle?: boolean }) => Promise<void>;
   startDealRound: () => Promise<void>;
   isDealerTurn: () => boolean;
@@ -97,31 +97,32 @@ export const useGameStore = create(
     didGameStart: false,
     readyForPlayingFirstRound: false,
 
-    hit: (playerId: PlayerId) => {
+    hit: async (playerId: PlayerId) => {
       const { drawCard } = useDeckStore.getState();
       set(state => {
         const player = getPlayerById(state, playerId);
         const card = drawCard();
-
         player.hand.push(card);
-        const validCounts = calculateHand(player.hand).validCounts;
-        if (validCounts.length === 0) {
-          state.stand(playerId);
-        }
       });
+      const player = getPlayerById(get(), playerId);
+      const validCounts = calculateHand(player.hand).validCounts;
+      if (validCounts.length === 0) {
+        await get().stand(playerId);
+      }
     },
 
-    double: (playerId: PlayerId) => {
+    double: async (playerId: PlayerId) => {
       set(state => {
         const player = getPlayerById(state, playerId);
+        if (player.bet > player.balance) throw new Error('Not enough money');
         player.balance = player.balance - player.bet;
         player.bet = player.bet * 2;
       });
-      get().hit(playerId); // will stand if bust. so checking
+      await get().hit(playerId); // will stand if bust. so checking
       const player = getPlayerById(get(), playerId)!;
       if (!player.finalCount) {
         // finalCount would have a value if "stand" was called
-        get().stand(playerId);
+        await get().stand(playerId);
       }
     },
 
@@ -140,21 +141,26 @@ export const useGameStore = create(
     },
 
     nextTurn: async () => {
-      if (get().currentPlayerId === 'dealer') {
-        get().dealToDealer();
+      if (get().currentPlayerId === 'endGame') {
         return;
       }
-      set(state => {
-        const player = state.currentPlayer(state);
-        // const curPlayerIndex = state.players.findIndex(p => p.id === player.id);
-        const curPlayerIndex = player.id;
-
-        const isLastPlayer = curPlayerIndex + 1 === state.players.length;
-        const nextPlayerId = isLastPlayer ? 'dealer' : ((player.id + 1) as PlayerId);
-        state.currentPlayerId = nextPlayerId;
-      });
       if (get().currentPlayerId === 'dealer') {
-        get().dealToDealer();
+        await get().dealToDealer();
+        return;
+      }
+      const player = get().currentPlayer(get());
+      if (!player) {
+        console.log(get());
+        console.log(`currentPlayerId = ${get().currentPlayerId}`);
+
+        throw new Error('Player is none');
+      }
+      const curPlayerIndex = player.id;
+      const isLastPlayer = curPlayerIndex + 1 === get().players.length;
+      const nextPlayerId = isLastPlayer ? 'dealer' : ((player.id + 1) as PlayerId);
+      set({ currentPlayerId: nextPlayerId });
+      if (get().currentPlayerId === 'dealer') {
+        await get().dealToDealer();
         return;
       }
       if (isBlackJack(get().currentPlayer().hand)) {
@@ -165,6 +171,7 @@ export const useGameStore = create(
       const { drawCard } = useDeckStore.getState();
 
       // Deal cards to the dealer until their hand is 17 or higher.
+      await sleep(500);
       let counts: ReturnType<typeof calculateHand>;
       // eslint-disable-next-line no-constant-condition
       while (true) {
@@ -178,13 +185,13 @@ export const useGameStore = create(
         ) {
           break;
         }
-        await sleep(1000);
         const card = drawCard();
         set(state => {
           state.dealer.push(card);
         });
+        await sleep(500);
       }
-      await sleep(1000);
+      await sleep(200);
 
       // get largest valid count
       // const { validCounts, bustCount } = calculateHand(get().dealer);
@@ -192,7 +199,8 @@ export const useGameStore = create(
 
       const dealerFinalCount = validCounts[0] || bustCount;
       set({ dealerFinalCount, currentPlayerId: 'endGame' });
-      await sleep(1000);
+      await sleep(500);
+      // set({  });
       get().finalizePlayersBalance();
     },
 
@@ -242,6 +250,7 @@ export const useGameStore = create(
         shuffle();
       }
       await get().startDealRound();
+      await sleep(200);
       set({ readyForPlayingFirstRound: true });
     },
     restartGame: async ({ shuffle } = {}) => {
@@ -268,6 +277,7 @@ export const useGameStore = create(
     startDealRound: async () => {
       const { drawCard } = useDeckStore.getState();
       for (let index = 0; index < 2; index++) {
+        // 2 cards
         for (const player of get().players) {
           await sleep(500);
           const card = drawCard();
@@ -282,9 +292,11 @@ export const useGameStore = create(
           state.dealer.push(drawCard());
         });
       }
+      await sleep(300);
       set({ currentPlayerId: initPlayers[0].id });
       if (isBlackJack(get().dealer)) {
-        get().runDealerHasBlackjackFlow();
+        await sleep(300);
+        await get().runDealerHasBlackjackFlow();
       }
     },
     finalizePlayersBalance: () => {
