@@ -1,4 +1,5 @@
-import { Card } from './deck';
+import { useMemo } from 'react';
+import { Card, Hand } from './deck';
 
 export function getCardValues(cValue: Card['number']): number[] {
   switch (cValue) {
@@ -29,6 +30,15 @@ export function getCardValues(cValue: Card['number']): number[] {
       throw new Error(`Unknown card: ${cValue}`);
   }
 }
+
+function handToNumberHand(hand: Card[] | Card['number'][]) {
+  if (typeof hand[0] === 'object') {
+    hand = (hand as Card[]).map(card => card.number);
+  } else {
+    hand = hand as Card['number'][];
+  }
+  return hand;
+}
 export function calculateHand(hand: Card[] | Card['number'][]) {
   let totals = [0];
   if (hand.length === 0) {
@@ -36,11 +46,7 @@ export function calculateHand(hand: Card[] | Card['number'][]) {
   }
   // let handValues: Card['value'][];
 
-  if (typeof hand[0] === 'object') {
-    hand = (hand as Card[]).map(card => card.number);
-  } else {
-    hand = hand as Card['number'][];
-  }
+  hand = handToNumberHand(hand);
 
   for (const card of hand) {
     const newTotals = [];
@@ -58,4 +64,19 @@ export function calculateHand(hand: Card[] | Card['number'][]) {
     validCounts: validTotals,
     bustCount: totals[0],
   };
+}
+
+export function isBlackJack(hand: Card[] | Card['number'][]) {
+  if (hand.length !== 2) {
+    return false;
+  }
+  hand = handToNumberHand(hand);
+  const { validCounts } = calculateHand(hand);
+  return validCounts[0] === 21;
+}
+
+export function useHasBlackjack(hand: Hand) {
+  return useMemo(() => {
+    return hand.length === 2 && calculateHand(hand).validCounts[0] === 21;
+  }, [hand]);
 }

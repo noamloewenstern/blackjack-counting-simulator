@@ -9,7 +9,7 @@ const Card = ({ card }: { card: CardType | null }) => {
     );
   }
 
-  const color = ['hearts', 'diamonds'].includes(card.suit) ? 'text-red-500' : 'text-black';
+  const color = card.suit === '♥' || card.suit === '♦' ? 'text-red-600' : 'text-black';
 
   return (
     <div className={`bg-white rounded shadow-lg flex flex-col items-center justify-center w-16 h-24 ${color}`}>
