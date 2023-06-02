@@ -9,7 +9,7 @@ import { sleep } from '../utils/helpers';
 import { BlackjackStrategy } from '../lib/strategies/utils';
 
 export const isAce = (card: Card) => card.number === 'A';
-export type PlayerId = 0 | 1 | 2;
+export type PlayerId = 10 | 20 | 30;
 
 export type IPlayer = {
   id: PlayerId;
@@ -23,7 +23,7 @@ export type IPlayer = {
 };
 const initPlayers: IPlayer[] = [
   {
-    id: 0,
+    id: 10,
     hand: [],
     bet: 10,
     balance: 10_000,
@@ -32,7 +32,7 @@ const initPlayers: IPlayer[] = [
     finished: false,
   },
   {
-    id: 1,
+    id: 20,
     hand: [],
     bet: 10,
     balance: 10_000,
@@ -41,7 +41,7 @@ const initPlayers: IPlayer[] = [
     finished: false,
   },
   {
-    id: 2,
+    id: 30,
     hand: [],
     bet: 10,
     balance: 10_000,
@@ -84,7 +84,7 @@ type GameStoreActions = {
   placeBet: (playerId: PlayerId, betAmount: number) => void;
   addMoney: (playerId: PlayerId, money: number) => void;
   setPlayerReady: (playerId: PlayerId) => void;
-  currentPlayer: (stateStore?: GameStore) => IPlayer;
+  currentPlayer: () => IPlayer;
 };
 const getPlayerById = (state: GameStore, playerId: PlayerId) => state.players.find(player => player.id === playerId)!;
 export const useGameStore = create(
@@ -149,18 +149,18 @@ export const useGameStore = create(
         await get().dealToDealer();
         return;
       }
-      const player = get().currentPlayer(get());
-      if (!player) {
-        console.log(get());
+      const player = get().currentPlayer();
+      const players = get().players;
+      const curPlayerIndex = players.findIndex(p => p.id === player.id);
+      if (!player || curPlayerIndex === -1) {
+        console.log(players);
         console.log(`currentPlayerId = ${get().currentPlayerId}`);
-
         throw new Error('Player is none');
       }
-      const curPlayerIndex = player.id;
-      const isLastPlayer = curPlayerIndex + 1 === get().players.length;
-      const nextPlayerId = isLastPlayer ? 'dealer' : ((player.id + 1) as PlayerId);
+      const isLastPlayer = curPlayerIndex + 1 === players.length;
+      const nextPlayerId = isLastPlayer ? 'dealer' : players[curPlayerIndex + 1].id;
       set({ currentPlayerId: nextPlayerId });
-      if (get().currentPlayerId === 'dealer') {
+      if (nextPlayerId === 'dealer') {
         await get().dealToDealer();
         return;
       }
@@ -307,8 +307,8 @@ export const useGameStore = create(
       });
     },
 
-    currentPlayer: (stateStore?: GameStore) => {
-      const state = stateStore ?? get();
+    currentPlayer() {
+      const state = this || get();
       const player = state.players.find(p => p.id === state.currentPlayerId)!;
       return player;
     },
