@@ -80,7 +80,7 @@ export default function Player({ playerId }: PlayerProps) {
 const PlayerHeader = ({ player }: { player: IPlayer }) => {
   return (
     <h2 className='text-xl font-bold'>
-      Player {player.id} | {player.stratergy} | Balance: {player.balance}
+      Player {player.id} | {player.strategy} | Balance: {player.balance}
     </h2>
   );
 };
