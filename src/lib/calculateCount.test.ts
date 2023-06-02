@@ -1,4 +1,4 @@
-import { calculateHand } from './calculateHand'; // Assuming you export your function from blackjack.ts file.
+import { calculateHand } from './calculateHand';
 
 describe('calculateHand', () => {
   test('should handle no cards', () => {
