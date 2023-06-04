@@ -13,7 +13,7 @@ export default function Game() {
       <div className='h-20' />
       <div className='flex content-between justify-around'>
         {players.map(player => (
-          <Player key={player.id} playerId={player.id} />
+          <Player key={player.id} player={player} />
         ))}
       </div>
     </div>

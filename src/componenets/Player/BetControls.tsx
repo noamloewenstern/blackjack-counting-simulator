@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
 import { IPlayer, useGameStore } from '../../stores/gameStore';
+import { usePlayer } from './PlayerContext';
 
-type BetProps = {
-  player: IPlayer;
-};
-export default function BetControls({ player }: BetProps) {
+export default function BetControls() {
+  const { player } = usePlayer();
   const setPlayerReady = useGameStore(state => state.setPlayerReady);
   const isPlayerReady = useGameStore(state => state.players.find(p => p.id === player.id)!.ready);
 
@@ -16,6 +15,17 @@ export default function BetControls({ player }: BetProps) {
     setPlayerReady(player.id);
   };
   const disablePlay = player.bet === 0;
+
+  const placeBet = useGameStore(state => state.placeBet);
+
+  useEffect(() => {
+    if (!isPlayerReady) {
+      setTimeout(() => {
+        placeBet(player.id, 100);
+        setPlayerReady(player.id);
+      }, 500);
+    }
+  }, [isPlayerReady, placeBet, player.id, setPlayerReady]);
 
   if (isPlayerReady) return <h3>Ready</h3>;
 

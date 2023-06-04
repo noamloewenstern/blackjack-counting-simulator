@@ -1,3 +1,6 @@
+import { calculateHand, getCardValues } from '../calculateHand';
+import { Card, Hand } from '../deck';
+
 type Action = 'H' | 'S' | 'D'; // H: Hit, S: Stand, D: Double
 
 export const basicStrategy: Action[][] = [
@@ -14,25 +17,29 @@ export const basicStrategy: Action[][] = [
   /* Dealer's upcard = 11 */ ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'S', 'S', 'S', 'S', 'S', 'S', 'S', 'S'], 
 ];
 
-function getActionByStrategy(playerHand: number[], dealerCount: number, strategy: Action[][]): Action {
-  const playerTotal = playerHand.reduce((a, b) => a + b, 0);
+export function getActionByStrategy(
+  playerHand: Hand,
+  dealerCount: number,
+  strategy: Action[][] = basicStrategy,
+  softStrategy: Action[][] = basicStrategy,
+): Action {
+  // Ensure playerTotal and dealerCard are in the valid range
+  if (dealerCount < 2 || dealerCount > 11) {
+    throw new Error(`Invalid player total or dealer card value dealerCount: ${dealerCount}`);
+  }
+  const { validCounts, bustCount } = calculateHand(playerHand);
+  const playerTotal = validCounts[0] || bustCount;
 
   // If playerTotal is 4 or lower, or dealerCard is an Ace, always hit
   if (playerTotal <= 4 || dealerCount === 1) {
     return 'H';
   }
-
-  // Ensure playerTotal and dealerCard are in the valid range
-  if (playerTotal < 5 || playerTotal > 20 || dealerCount < 2 || dealerCount > 11) {
-    throw new Error('Invalid player total or dealer card value');
+  if (playerTotal > 20) {
+    return 'S';
   }
 
-  // Subtract the minimum values from playerTotal and dealerCard to get the indices
-  const playerIndex = playerTotal - 5;
-  const dealerIndex = dealerCount - 2;
-
-  // Return the action from the strategy matrix
-  const action = strategy[dealerIndex][playerIndex];
+  strategy = hasAce(playerHand) ? softStrategy : strategy;
+  const action = strategy[dealerCount - 2][playerTotal - 2];
   if (action === 'D' && playerHand.length > 2) {
     return 'H';
   }
@@ -40,28 +47,25 @@ function getActionByStrategy(playerHand: number[], dealerCount: number, strategy
 }
 
 type PlayArgs = {
-  playerHand: number[];
+  playerHand: Hand;
   dealerCount: number;
   strategy: Action[][];
-  drawCard: () => number;
+  drawCard: () => Card;
 };
 
 export function playHandAccordingToStrategy(playArgs: PlayArgs) {
   const { dealerCount, strategy, drawCard } = playArgs;
   const playerHand = [...playArgs.playerHand];
-  // eslint-disable-next-line no-constant-condition
-  const playerTotal = () => playerHand.reduce((a, b) => a + b, 0);
 
-  while (playerTotal() < 21) {
-    const action = getActionByStrategy(playerHand, dealerCount, strategy);
-
-    if (action === 'D' || action === 'S') {
-      return;
-    }
-
+  let action = getActionByStrategy(playerHand, dealerCount, strategy);
+  while (action !== 'S' && action !== 'D') {
     if (action === 'H') {
       const newCard = drawCard();
       playerHand.push(newCard);
     }
+    action = getActionByStrategy(playerHand, dealerCount, strategy);
   }
+}
+function hasAce(playerHand: Hand) {
+  return playerHand.some(card => card.number === 'A');
 }

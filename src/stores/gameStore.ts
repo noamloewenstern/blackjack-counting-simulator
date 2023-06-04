@@ -4,7 +4,7 @@ import { immer } from 'zustand/middleware/immer';
 import { mountStoreDevtool } from 'simple-zustand-devtools';
 import { useDeckStore } from './deckStore';
 import { Card, Hand } from '../lib/deck';
-import { calculateHand, isBlackJack } from '../lib/calculateHand';
+import { calculateHand, getCardValues, isBlackJack } from '../lib/calculateHand';
 import { sleep } from '../utils/helpers';
 import { BlackjackStrategy } from '../lib/strategies/utils';
 
@@ -50,12 +50,14 @@ const initPlayers: IPlayer[] = [
     finished: false,
   },
 ];
-
+type IDealer = {
+  hand: Hand;
+  finalCount: number;
+};
 type GameStore = {
-  dealer: Hand;
+  dealer: IDealer;
   players: IPlayer[];
   currentPlayerId: 'init' | PlayerId | 'dealer' | 'endGame';
-  dealerFinalCount: number;
 
   didGameStart: boolean;
   readyForPlayingFirstRound: boolean;
@@ -71,6 +73,7 @@ type GameStoreActions = {
 
   nextTurn: () => Promise<void>;
   dealToDealer: () => Promise<void>;
+  visibleDealerCount: () => number | number[] | undefined;
 
   determineOutcome: (playerId: PlayerId) => 'lose' | 'push' | 'win' | 'blackjack'; // This could return a string indicating win, lose, or push
 
@@ -89,7 +92,10 @@ type GameStoreActions = {
 const getPlayerById = (state: GameStore, playerId: PlayerId) => state.players.find(player => player.id === playerId)!;
 export const useGameStore = create(
   immer<GameStore & GameStoreActions>((set, get) => ({
-    dealer: [],
+    dealer: {
+      hand: [],
+      finalCount: 0,
+    },
     // players: [],
     players: initPlayers,
     currentPlayerId: 'init',
@@ -168,6 +174,25 @@ export const useGameStore = create(
         await get().nextTurn();
       }
     },
+    visibleDealerCount: () => {
+      const { hand, finalCount } = get().dealer;
+
+      if (hand.length === 0) return undefined;
+      const didGameEnd = get().currentPlayerId === 'endGame';
+      if (didGameEnd && finalCount) {
+        return finalCount;
+      }
+      const isDealerTurn = get().currentPlayerId === 'dealer';
+      if (!isDealerTurn && hand.length >= 2) {
+        return getCardValues(hand[1].number);
+      }
+      const counts = hand.length >= 2 ? calculateHand(hand) : undefined;
+      if (!counts) return undefined;
+      if (counts.validCounts.length > 0) {
+        return counts.validCounts[0];
+      }
+      return counts.bustCount;
+    },
     dealToDealer: async () => {
       const { drawCard } = useDeckStore.getState();
 
@@ -177,7 +202,7 @@ export const useGameStore = create(
       // eslint-disable-next-line no-constant-condition
       while (true) {
         // let { validCounts } = counts;
-        counts = calculateHand(get().dealer);
+        counts = calculateHand(get().dealer.hand);
         const { validCounts } = counts;
         if (
           validCounts.length === 0 ||
@@ -188,7 +213,7 @@ export const useGameStore = create(
         }
         const card = drawCard();
         set(state => {
-          state.dealer.push(card);
+          state.dealer.hand.push(card);
         });
         await sleep(500);
       }
@@ -199,7 +224,10 @@ export const useGameStore = create(
       const { validCounts, bustCount } = counts;
 
       const dealerFinalCount = validCounts[0] || bustCount;
-      set({ dealerFinalCount, currentPlayerId: 'endGame' });
+      set(state => {
+        state.dealer.finalCount = dealerFinalCount;
+        state.currentPlayerId = 'endGame';
+      });
       await sleep(500);
       get().finalizePlayersBalance();
     },
@@ -207,11 +235,11 @@ export const useGameStore = create(
     determineOutcome: (playerId: PlayerId) => {
       const player = getPlayerById(get(), playerId);
 
-      const dealerCount = get().dealerFinalCount;
+      const dealerCount = get().dealer.finalCount;
       const playerCount = player.finalCount;
       if (!playerCount) throw new Error(`Player ${playerId} does not have a final count`);
 
-      const dealerHasBlackjack = isBlackJack(get().dealer);
+      const dealerHasBlackjack = isBlackJack(get().dealer.hand);
       const playerHasBlackjack = isBlackJack(player.hand);
 
       if (playerCount > 21 || (dealerCount <= 21 && playerCount < dealerCount)) {
@@ -257,9 +285,9 @@ export const useGameStore = create(
           player.finalCount = undefined;
           player.ready = false;
         });
-        state.dealer = [];
+        state.dealer.hand = [];
+        state.dealer.finalCount = 0;
         state.currentPlayerId = 'init';
-        state.dealerFinalCount = 0;
         state.didGameStart = false;
         state.readyForPlayingFirstRound = false;
       });
@@ -279,10 +307,10 @@ export const useGameStore = create(
         }
         await sleep(500);
         set(state => {
-          state.dealer.push(drawCard());
+          state.dealer.hand.push(drawCard());
         });
       }
-      if (isBlackJack(get().dealer)) {
+      if (isBlackJack(get().dealer.hand)) {
         await sleep(300);
         await get().runDealerHasBlackjackFlow();
         return;

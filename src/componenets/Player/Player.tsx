@@ -1,46 +1,40 @@
 import { useEffect } from 'react';
-import { calculateHand, useHasBlackjack } from '../../lib/calculateHand';
+import { useHasBlackjack } from '../../lib/calculateHand';
 import { IPlayer, PlayerId, useGameStore } from '../../stores/gameStore';
 import Card from '../Card';
 import BetControls from './BetControls';
 import Controls from './Controls';
+import { PlayerProvider, usePlayer } from './PlayerContext';
 
-type PlayerProps = {
-  playerId: PlayerId;
-};
-
-export default function Player({ playerId }: PlayerProps) {
+function Player() {
   // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  const player = useGameStore(state => state.players.find(p => p.id === playerId))!;
-
-  const isCurrentTurn = useGameStore(state => state.currentPlayerId === player.id);
-  const readyForPlayingFirstRound = useGameStore(state => state.readyForPlayingFirstRound);
+  const { player, isCurrentTurn, hasBlackjack, didBust, counts } = usePlayer();
   const didGameStart = useGameStore(state => state.didGameStart);
   const playerHasCards = player.hand.length > 0;
-  const counts = didGameStart && playerHasCards ? calculateHand(player.hand) : null;
-  const didBust = counts?.validCounts.length === 0 && counts?.bustCount > 21;
+
+  const readyForPlayingFirstRound = useGameStore(state => state.readyForPlayingFirstRound);
+
   const stand = useGameStore(state => state.stand);
   const setStandInfo = useGameStore(state => state.setStandInfo);
   const finalCount = player.finalCount;
-  const hasBlackjack = useHasBlackjack(player.hand);
 
   useEffect(() => {
     if (isCurrentTurn && hasBlackjack) {
-      stand(playerId);
+      stand(player.id);
     }
-  }, [isCurrentTurn, hasBlackjack, stand, playerId]);
+  }, [isCurrentTurn, hasBlackjack, stand, player.id]);
 
   useEffect(() => {
     if (readyForPlayingFirstRound && hasBlackjack) {
-      setStandInfo(playerId);
+      setStandInfo(player.id);
     }
-  }, [readyForPlayingFirstRound, hasBlackjack, playerId, setStandInfo]);
+  }, [readyForPlayingFirstRound, hasBlackjack, player.id, setStandInfo]);
 
   useEffect(() => {
     if (didBust) {
-      setStandInfo(playerId);
+      setStandInfo(player.id);
     }
-  }, [didBust, playerId, setStandInfo]);
+  }, [didBust, player.id, setStandInfo]);
 
   return (
     <div className='player border border-gray-500 rounded p-4 shadow-lg flex flex-col items-center gap-2 w-1/3'>
@@ -66,16 +60,18 @@ export default function Player({ playerId }: PlayerProps) {
           <Card card={card} key={index} />
         ))}
       </div>
-      {!didGameStart && <BetControls player={player} />}
+      {!didGameStart && <Player.BetControls />}
       {didGameStart &&
         !player.finished &&
         !finalCount &&
         playerHasCards &&
         !hasBlackjack &&
-        readyForPlayingFirstRound && <Controls player={player} />}
+        readyForPlayingFirstRound && <Player.Controls />}
     </div>
   );
 }
+Player.Controls = Controls;
+Player.BetControls = BetControls;
 
 const PlayerHeader = ({ player }: { player: IPlayer }) => {
   return (
@@ -90,10 +86,10 @@ const EndGameMessage = ({ player }: { player: IPlayer }) => {
   const hasBlackjack = useHasBlackjack(player.hand);
   const finalCount = player.finalCount;
 
-  const dealerHasBlackjack = useHasBlackjack(useGameStore(state => state.dealer));
-  const dealerFinalCount = useGameStore(state => state.dealerFinalCount);
+  const dealer = useGameStore(state => state.dealer);
+  const dealerHasBlackjack = useHasBlackjack(dealer.hand);
 
-  const didGameEnd = didGameStart && dealerFinalCount > 0;
+  const didGameEnd = didGameStart && dealer.finalCount > 0;
 
   const readyForPlayingFirstRound = useGameStore(state => state.readyForPlayingFirstRound);
 
@@ -111,12 +107,23 @@ const EndGameMessage = ({ player }: { player: IPlayer }) => {
     );
   }
   if (!didGameEnd || !finalCount) return null;
-  if (finalCount > 21 || (finalCount < dealerFinalCount && dealerFinalCount <= 21)) {
+  if (finalCount > 21 || (finalCount < dealer.finalCount && dealer.finalCount <= 21)) {
     return <span className='text-red-500 ml-4'>Lose</span>;
   }
-  if (finalCount === dealerFinalCount && !hasBlackjack && !dealerHasBlackjack) {
+  if (finalCount === dealer.finalCount && !hasBlackjack && !dealerHasBlackjack) {
     return <span className='text-yellow-500 ml-4'>Push</span>;
   }
 
   return <span className='text-green-500 ml-4'>Win</span>;
 };
+
+type PlayerProps = {
+  player: IPlayer;
+};
+export default function PlayerWithContext({ player }: PlayerProps) {
+  return (
+    <PlayerProvider player={player}>
+      <Player />
+    </PlayerProvider>
+  );
+}

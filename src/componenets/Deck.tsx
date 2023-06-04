@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useDeckStore } from '../stores/deckStore';
 import { useGameStore } from '../stores/gameStore';
 
+let clickedInitStartedGame = false;
 const Deck = () => {
   const deck = useDeckStore(state => state.deck);
   const shuffle = useDeckStore(state => state.shuffle);
@@ -21,6 +22,16 @@ const Deck = () => {
   const handleDealAnotherRound = () => {
     initDealState();
   };
+
+  useEffect(() => {
+    if (!clickedInitStartedGame && !didGameStart && areAllPlayersReady) {
+      clickedInitStartedGame = true;
+      setTimeout(startGame, 100);
+    }
+    if (didGameStart) {
+      clickedInitStartedGame = false;
+    }
+  }, [areAllPlayersReady, didGameStart, startGame]);
 
   return (
     <>
