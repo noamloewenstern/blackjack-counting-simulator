@@ -3,7 +3,7 @@ import { useHasBlackjack } from '../../lib/calculateHand';
 import { IPlayer, PlayerId, useGameStore } from '../../stores/gameStore';
 import Card from '../Card';
 import BetControls from './BetControls';
-import Controls from './Controls';
+import ActionControls from './ActionControls';
 import { PlayerProvider, usePlayer } from './PlayerContext';
 
 function Player() {
@@ -66,11 +66,11 @@ function Player() {
         !finalCount &&
         playerHasCards &&
         !hasBlackjack &&
-        readyForPlayingFirstRound && <Player.Controls />}
+        readyForPlayingFirstRound && <Player.ActionControls />}
     </div>
   );
 }
-Player.Controls = Controls;
+Player.ActionControls = ActionControls;
 Player.BetControls = BetControls;
 
 const PlayerHeader = ({ player }: { player: IPlayer }) => {

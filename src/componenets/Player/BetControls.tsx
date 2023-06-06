@@ -1,11 +1,15 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { IPlayer, useGameStore } from '../../stores/gameStore';
 import { usePlayer } from './PlayerContext';
+import { calculateCountingBet } from '../../lib/strategies/blackjack-counting';
+import { useCountStore } from '../../stores/countStore';
+import { useSettingsStore } from '../../stores/settingsStore';
 
 export default function BetControls() {
   const { player } = usePlayer();
   const setPlayerReady = useGameStore(state => state.setPlayerReady);
-  const isPlayerReady = useGameStore(state => state.players.find(p => p.id === player.id)!.ready);
+  const runningCount = useCountStore(state => state.runningCount);
+  const numberDecksInShoe = useSettingsStore(state => state.numberDecksInShoe);
 
   const handleReady = () => {
     if (player.bet === 0) {
@@ -18,16 +22,25 @@ export default function BetControls() {
 
   const placeBet = useGameStore(state => state.placeBet);
 
+  const ranUseEffect = useRef(false);
   useEffect(() => {
-    if (!isPlayerReady) {
+    if (player.strategy !== 'interactive' && !ranUseEffect.current && !player.ready && !player.bet) {
+      ranUseEffect.current = true;
+
       setTimeout(() => {
-        placeBet(player.id, 100);
+        let bet = 100;
+        if (player.strategy === 'perfect-blackjack') {
+          bet = 100;
+        } else if (player.strategy === 'counting') {
+          bet = calculateCountingBet({ runningCount, numberDecksInShoe });
+        }
+        placeBet(player.id, bet);
         setPlayerReady(player.id);
       }, 500);
     }
-  }, [isPlayerReady, placeBet, player.id, setPlayerReady]);
+  }, [placeBet, player.bet, player.id, player.ready, setPlayerReady, player.strategy, runningCount, numberDecksInShoe]);
 
-  if (isPlayerReady) return <h3>Ready</h3>;
+  if (player.ready) return <h3>Ready</h3>;
 
   return (
     <div className='flex flex-wrap justify-center gap-4 max-w-[400px] mx-auto'>
