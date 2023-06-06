@@ -1,6 +1,12 @@
-export function calculateBet(count: number, numDecks: number): number {
+export function calculateCountingBet({
+  runningCount,
+  numberDecksInShoe,
+}: {
+  runningCount: number;
+  numberDecksInShoe: number;
+}): number {
   // Calculate the absolute count
-  const absCount = count / numDecks;
+  const absCount = runningCount / numberDecksInShoe;
 
   // Initialize bet at 100
   let bet = 100;
