@@ -1,12 +1,13 @@
-export const cardNumbers = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'] as const;
+export const cardNumbers = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'T', 'J', 'Q', 'K'] as const;
 export const suits = ['♠', '♥', '♦', '♣'] as const;
 
-type CardValue = (typeof cardNumbers)[number];
+export type CardValue = (typeof cardNumbers)[number];
 type CardSuit = (typeof suits)[number];
 
 export type Card = {
   number: CardValue;
   suit: CardSuit;
+  isVisible: boolean;
 };
 export type Deck = Card[];
 export type Hand = Card[];
@@ -24,7 +25,7 @@ export const createDeck = () => {
   const newDeck = [] as Card[];
   for (let i = 0; i < suits.length; i++) {
     for (let j = 0; j < cardNumbers.length; j++) {
-      newDeck.push({ number: cardNumbers[j], suit: suits[i] });
+      newDeck.push({ number: cardNumbers[j], suit: suits[i], isVisible: true });
     }
   }
   return newDeck;

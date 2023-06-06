@@ -1,7 +1,7 @@
 import { Card as CardType } from '../lib/deck';
 
-const Card = ({ card }: { card: CardType | null }) => {
-  if (!card) {
+const Card = ({ card }: { card: CardType }) => {
+  if (!card || !card.isVisible) {
     return (
       <div className='bg-blue-700 text-white rounded shadow-lg flex items-center justify-center w-16 h-24'>
         <span>🂠</span>

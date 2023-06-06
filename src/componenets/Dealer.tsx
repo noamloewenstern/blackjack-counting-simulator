@@ -44,7 +44,7 @@ function DealerHand() {
 
       <div className='dealer min-h-24 rounded-lg p-4 flex justify-center gap-4 text-white'>
         {dealerHand.map((card, index) => (
-          <Card card={index === 0 && !(isDealerTurn || didGameEnd) ? null : card} key={index} />
+          <Card card={card} key={index} />
         ))}
       </div>
     </div>
