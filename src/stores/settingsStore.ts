@@ -2,7 +2,9 @@ import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 
 type DeckStore = {
-  numberOfDecks: number;
+  numberDecksInShoe: number;
+  dealerMustHitOnSoft17: boolean;
+  allowedToDoubleAfterSplit: boolean;
 };
 type Actions = {
   setNumberOfDecks: (numberOfDecks: number) => void;
@@ -10,7 +12,9 @@ type Actions = {
 
 export const useSettingsStore = create(
   immer<DeckStore & Actions>(set => ({
-    numberOfDecks: 4, // To be set by the user
-    setNumberOfDecks: (numberOfDecks: number) => set({ numberOfDecks }),
+    numberDecksInShoe: 4,
+    dealerMustHitOnSoft17: true,
+    allowedToDoubleAfterSplit: true,
+    setNumberOfDecks: (numberOfDecks: number) => set({ numberDecksInShoe: numberOfDecks }),
   })),
 );
