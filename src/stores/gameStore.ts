@@ -1,3 +1,5 @@
+import { useSettingsStore } from './settingsStore';
+import { useCountStore } from './countStore';
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
@@ -25,28 +27,28 @@ const initPlayers: IPlayer[] = [
   {
     id: 10,
     hand: [],
-    bet: 10,
+    bet: 0,
     balance: 10_000,
     strategy: 'interactive',
-    ready: true,
+    ready: false,
     finished: false,
   },
   {
     id: 20,
     hand: [],
-    bet: 10,
+    bet: 0,
     balance: 10_000,
     strategy: 'perfect-blackjack',
-    ready: true,
+    ready: false,
     finished: false,
   },
   {
     id: 30,
     hand: [],
-    bet: 10,
+    bet: 0,
     balance: 10_000,
     strategy: 'counting',
-    ready: true,
+    ready: false,
     finished: false,
   },
 ];
@@ -159,8 +161,6 @@ export const useGameStore = create(
       const players = get().players;
       const curPlayerIndex = players.findIndex(p => p.id === player.id);
       if (!player || curPlayerIndex === -1) {
-        console.log(players);
-        console.log(`currentPlayerId = ${get().currentPlayerId}`);
         throw new Error('Player is none');
       }
       const isLastPlayer = curPlayerIndex + 1 === players.length;
@@ -195,10 +195,20 @@ export const useGameStore = create(
     },
     dealToDealer: async () => {
       const { drawCard } = useDeckStore.getState();
+      const { updateCount } = useCountStore.getState();
+      set(state => {
+        state.dealer.hand.forEach(card => {
+          if (!card.isVisible) {
+            card.isVisible = true;
+            updateCount(card);
+          }
+        });
+      });
 
       // Deal cards to the dealer until their hand is 17 or higher.
       await sleep(500);
       let counts: ReturnType<typeof calculateHand>;
+      const { dealerMustHitOnSoft17 } = useSettingsStore.getState();
       // eslint-disable-next-line no-constant-condition
       while (true) {
         // let { validCounts } = counts;
@@ -207,7 +217,10 @@ export const useGameStore = create(
         if (
           validCounts.length === 0 ||
           validCounts[0] > 17 ||
-          (validCounts[0] === 17 && validCounts[1] !== 7) /* soft 17 */
+          (validCounts[0] === 17 &&
+            /* soft 17 */
+            (!validCounts[1] /* means the count is total, not soft */ ||
+              !dealerMustHitOnSoft17)) /* doesn't have to hit on soft 17 */
         ) {
           break;
         }
@@ -307,7 +320,9 @@ export const useGameStore = create(
         }
         await sleep(500);
         set(state => {
-          state.dealer.hand.push(drawCard());
+          const visible = index === 0 ? false : true;
+          const card = drawCard({ visible });
+          state.dealer.hand.push(card);
         });
       }
       if (isBlackJack(get().dealer.hand)) {
@@ -347,6 +362,7 @@ export const useGameStore = create(
     placeBet: (playerId: PlayerId, betAmount: number) => {
       set(state => {
         const player = getPlayerById(state, playerId);
+        if (player.balance < betAmount) throw new Error('Not enough money');
         player.balance -= betAmount;
         player.bet += betAmount;
       });
