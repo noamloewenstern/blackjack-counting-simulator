@@ -1,4 +1,3 @@
-import './App.css';
 import Game from './componenets/Game';
 
 function App() {

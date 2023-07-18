@@ -1,17 +1,21 @@
-import React from 'react';
-import { ICard } from '../lib/card-types';
+import { Card as CardType } from '../lib/deck';
 
-interface CardProps {
-  card: ICard;
-}
+const Card = ({ card }: { card: CardType }) => {
+  if (!card || !card.isVisible) {
+    return (
+      <div className='bg-blue-700 text-white rounded shadow-lg flex items-center justify-center w-16 h-24'>
+        <span>🂠</span>
+      </div>
+    );
+  }
 
-const Card: React.FC<CardProps> = ({ card }) => {
+  const color = card.suit === '♥' || card.suit === '♦' ? 'text-red-600' : 'text-black';
+
   return (
-    <span className='bg-white rounded shadow p-4 m-2 text-xl'>
-      {card.value}
-      {card.suit}
-      {/* <p>{}</p> */}
-    </span>
+    <div className={`bg-white rounded shadow-lg flex flex-col items-center justify-center w-16 h-24 ${color}`}>
+      <span>{card.number}</span>
+      <span>{card.suit}</span>
+    </div>
   );
 };
 
