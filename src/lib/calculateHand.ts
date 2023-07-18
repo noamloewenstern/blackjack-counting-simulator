@@ -35,14 +35,14 @@ function handToNumberHand(hand: Card[] | Card['value'][]) {
   return hand;
 }
 const calculateHandCache = new LRUCache<string, ReturnType<typeof calculateHand>>({ max: 2000 });
-export function calculateHand(hand: Card[] | Card['value'][]): {
+export function calculateHand(cards: Card[] | Card['value'][]): {
   validCounts: number[];
   bustCount: number;
 } {
-  if (hand.length === 0) {
+  if (cards.length === 0) {
     throw new Error('Hand must have at least one card');
   }
-  const newHand = handToNumberHand(hand);
+  const newHand = handToNumberHand(cards);
   const cachedKey = [...newHand].sort().join(',');
   const cachedResult = calculateHandCache.get(cachedKey);
   if (cachedResult) {
