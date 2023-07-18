@@ -2,6 +2,7 @@ import { assign, createMachine, fromCallback, pure, raise } from 'xstate';
 import { BlackjackStrategy } from '../strategies/utils';
 import { inspect } from '@xstate/inspect';
 import { raiseError } from '~/utils/helpers';
+import { calculateHand } from '../calculateHand';
 inspect();
 type Card = {
   suit: string;
@@ -12,6 +13,11 @@ type Hand = {
   cards: Card[];
   bet: number;
   isFinished: boolean;
+  getCounts: () => {
+    isSoft: () => boolean;
+    valid: number[];
+    bust?: number;
+  };
 };
 type Player = {
   id: string;
@@ -64,7 +70,7 @@ export const machine = ({ deck, gameSettings }: MachineProps) =>
           on: {
             INIT_GAME: {
               target: 'placePlayerBets',
-              actions: ['shuffleDeck', 'initContextInfo'],
+              actions: ['shuffleDeck', 'initContext'],
             },
           },
         },
@@ -324,7 +330,7 @@ export const machine = ({ deck, gameSettings }: MachineProps) =>
             });
           },
         }),
-        initContextInfo: assign({}), // todo
+        // initContext: assign({}), // ! todo
         hitDealer: assign(({ context }) => {
           const card = deck.drawCard();
           return {
@@ -441,20 +447,32 @@ export const machine = ({ deck, gameSettings }: MachineProps) =>
         }),
       },
       guards: {
-        canHit: ({ context, event }) => true,
+        canHit: ({ context, event }) => {
+          const { hand } = getCurrentTurnHand(context);
+          return hand.getCounts().valid.length > 0;
+        },
         canDouble: ({ context, event }) => {
           const { hand } = getCurrentTurnHand(context);
           return hand.cards.length === 2;
         },
         isOver21: ({ context, event }) => {
-          // todo
-          return false;
+          const { hand } = getCurrentTurnHand(context);
+          return hand.getCounts().valid.length === 0;
         },
         dealerHasFinalHand: ({ context, event }) => {
+          const { dealerMustHitOnSoft17 } = gameSettings;
+
           const { hand } = context.dealer;
-          // return hand.cards.length > 1;
-          // todo
-          return true;
+          const counts = hand.getCounts();
+          const validCounts = counts.valid;
+          return (
+            validCounts.length === 0 ||
+            validCounts[0]! > 17 ||
+            /* soft 17 */
+            (validCounts[0] === 17 &&
+              (!validCounts[1] /* means the count is total, not soft */ ||
+                !dealerMustHitOnSoft17)) /* doesn't have to hit on soft 17 */
+          );
         },
         allPlayersGot2Cards: ({ context }) => {
           return context.players.every(player => player.hands.every(hand => hand.cards.length === 2));
