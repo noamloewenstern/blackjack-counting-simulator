@@ -1,5 +1,3 @@
-import { useEffect, useRef } from 'react';
-import { calculateHand, getCardValues } from '../../lib/calculateHand';
 import { getActionByStrategy } from '../../lib/strategies/perfect-blackjack';
 import { useGameStore } from '../../stores/gameStore';
 import { usePlayer } from './PlayerContext';
@@ -9,7 +7,7 @@ export default function ActionControls() {
   const { player, counts } = usePlayer();
   const [hit, stand, double] = useGameStore(state => [state.hit, state.stand, state.double]);
   const isCurrentTurn = useGameStore(state => state.currentPlayerId === player.id);
-  let visibleDealerCount = useGameStore(state => state.visibleDealerCount());
+  let visibleDealerCount = useGameStore(state => state.visibleDealerCount)();
   visibleDealerCount = Array.isArray(visibleDealerCount) ? visibleDealerCount[0] : visibleDealerCount;
   const allowedToDoubleAfterSplit = useSettingsStore(state => state.allowedToDoubleAfterSplit);
   // const strategyByPlayer = player.strategy;
@@ -23,8 +21,6 @@ export default function ActionControls() {
         canDouble,
       })) ||
     undefined;
-
-  console.table({ recommendedAction, visibleDealerCount, hand: player.hand.map(c => c.number) });
 
   const strategy = {
     recommendation: recommendedAction,

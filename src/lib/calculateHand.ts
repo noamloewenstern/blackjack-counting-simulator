@@ -83,7 +83,7 @@ export function calculateHand(hand: Card[] | Card['number'][]): {
       }
     }
     // remove duplicates and sort
-    totals = Array.from(new Set(newTotals)).sort((a, b) => a - b);
+    totals = [...new Set(newTotals)].sort((a, b) => a - b);
   }
   const validTotals = totals.filter(total => total <= 21).sort((a, b) => b - a); // reverse sort
   const result = {

@@ -164,7 +164,7 @@ export const useGameStore = create(
         throw new Error('Player is none');
       }
       const isLastPlayer = curPlayerIndex + 1 === players.length;
-      const nextPlayerId = isLastPlayer ? 'dealer' : players[curPlayerIndex + 1].id;
+      const nextPlayerId = isLastPlayer ? 'dealer' : players[curPlayerIndex + 1]!.id;
       set({ currentPlayerId: nextPlayerId });
       if (nextPlayerId === 'dealer') {
         await get().dealToDealer();
@@ -175,23 +175,10 @@ export const useGameStore = create(
       }
     },
     visibleDealerCount: () => {
-      const { hand, finalCount } = get().dealer;
-
-      if (hand.length === 0) return undefined;
-      const didGameEnd = get().currentPlayerId === 'endGame';
-      if (didGameEnd && finalCount) {
-        return finalCount;
-      }
-      const isDealerTurn = get().currentPlayerId === 'dealer';
-      if (!isDealerTurn && hand.length >= 2) {
-        return getCardValues(hand[1].number);
-      }
-      const counts = hand.length >= 2 ? calculateHand(hand) : undefined;
-      if (!counts) return undefined;
-      if (counts.validCounts.length > 0) {
-        return counts.validCounts[0];
-      }
-      return counts.bustCount;
+      if (get().dealer.hand.filter(card => card.isVisible).length === 0) return;
+      const { validCounts, bustCount } = calculateHand(get().dealer.hand.filter(card => card.isVisible));
+      if (validCounts.length === 0) return bustCount;
+      return validCounts.length > 1 ? validCounts : validCounts[0];
     },
     dealToDealer: async () => {
       const { drawCard } = useDeckStore.getState();
@@ -216,7 +203,7 @@ export const useGameStore = create(
         const { validCounts } = counts;
         if (
           validCounts.length === 0 ||
-          validCounts[0] > 17 ||
+          validCounts[0]! > 17 ||
           (validCounts[0] === 17 &&
             /* soft 17 */
             (!validCounts[1] /* means the count is total, not soft */ ||
@@ -331,7 +318,7 @@ export const useGameStore = create(
         return;
       }
       await sleep(300);
-      set({ currentPlayerId: initPlayers[0].id });
+      set({ currentPlayerId: initPlayers[0]!.id });
     },
     finalizePlayersBalance: () => {
       set(state => {

@@ -16,7 +16,7 @@ function DealerHand() {
 
   const didBust = counts?.validCounts.length === 0 && counts?.bustCount > 21;
 
-  const visibleCount = useGameStore(state => state.visibleDealerCount());
+  const visibleDealerCount = useGameStore(state => state.visibleDealerCount)();
 
   return (
     <div className='h-60'>
@@ -32,11 +32,13 @@ function DealerHand() {
           )}
         </h2>
         {/* {(didGameStart || didGameEnd) && visibleDealerCount && ( */}
-        {visibleCount && (
+        {visibleDealerCount && (
           <h3 className='text-lg ml-2 font-bold'>
             Count:{` `}
             <span className={`text-xl font-bold ${didBust ? 'text-red-700' : 'text-green-600'}`}>
-              {Array.isArray(visibleCount) && visibleCount.length > 0 ? visibleCount.join(' | ') : visibleCount}
+              {Array.isArray(visibleDealerCount) && visibleDealerCount.length > 0
+                ? visibleDealerCount.join(' | ')
+                : visibleDealerCount}
             </span>
           </h3>
         )}
