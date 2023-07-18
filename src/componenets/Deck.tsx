@@ -1,22 +1,11 @@
-import { useEffect } from 'react';
 import { useDeckStore } from '../stores/deckStore';
-import { useGameStore } from '../stores/gameStore';
 import { useCountStore } from '../stores/countStore';
 import { useGameMachine } from '~/lib/machines/gameMachineContext';
 
-const clickedInitStartedGame = false;
 const Deck = () => {
-  const deck = useDeckStore(state => state.deck);
-  const { state, send } = useGameMachine();
+  const { state, send, isRoundFinished } = useGameMachine();
   const isOnInitGame = state.matches('initial');
   const isWaitingForPlayersBets = state.matches('placePlayerBets');
-
-  // const didRoundStart = !isOnInitGame;
-  const didRoundEnd = state.matches('finalizeRound');
-
-  const allPlayersSetBets = state.context.players.every(player => player.hands.every(hand => hand.bet > 0));
-
-  const [runningCount, getAbsoluteCount] = useCountStore(state => [state.runningCount, state.getAbsoluteCount]);
 
   const handleStartGame = async () => {
     send({ type: 'START_GAME' });
@@ -39,31 +28,9 @@ const Deck = () => {
     <>
       <div className='flex'>
         <div className='flex flex-col items-center justify-center h-auto w-auto bg-gray-900 text-white p-4 rounded shadow-lg'>
-          <p>{deck.length} cards</p>
-          <div className='bg-gray-900 text-white p-4 rounded shadow-lg'>
-            <p>Running Count: {runningCount}</p>
-            <p>Absolute Count: {getAbsoluteCount()}</p>
-          </div>
-
-          {isOnInitGame && (
-            <button
-              // disabled={!allPlayersSetBets}
-              onClick={handleStartGame}
-              className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded`}
-            >
-              Start Game
-            </button>
-          )}
-
-          {didRoundEnd && (
-            <button
-              onClick={handleDealAnotherRound}
-              className='bg-blue-500 hover:bg-blue-700
-       text-white font-bold py-2 px-4 rounded disabled:hover:pointer-events-none disabled:hover'
-            >
-              Deal Again
-            </button>
-          )}
+          <RunningCount />
+          {isOnInitGame && <StartGameButton onStartGame={handleStartGame} />}
+          {isRoundFinished && <EndGameMessage onDealAgain={handleDealAnotherRound}></EndGameMessage>}
         </div>
       </div>
       {isWaitingForPlayersBets && (
@@ -80,5 +47,41 @@ const Deck = () => {
     </div>
    */
 };
+function RunningCount() {
+  const deck = useDeckStore(state => state.deck);
+  const [runningCount, getAbsoluteCount] = useCountStore(state => [state.runningCount, state.getAbsoluteCount]);
+
+  return (
+    <>
+      <p>{deck.length} cards</p>
+      <div className='bg-gray-900 text-white p-4 rounded shadow-lg'>
+        <p>Running Count: {runningCount}</p>
+        <p>Absolute Count: {getAbsoluteCount()}</p>
+      </div>
+    </>
+  );
+}
+function StartGameButton({ onStartGame }: { onStartGame: () => void }) {
+  return (
+    <button
+      // disabled={!allPlayersSetBets}
+      onClick={onStartGame}
+      className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded`}
+    >
+      Start Game
+    </button>
+  );
+}
+function EndGameMessage({ onDealAgain }: { onDealAgain: () => void }) {
+  return (
+    <button
+      onClick={onDealAgain}
+      className='bg-blue-500 hover:bg-blue-700
+       text-white font-bold py-2 px-4 rounded disabled:hover:pointer-events-none disabled:hover'
+    >
+      Deal Again
+    </button>
+  );
+}
 
 export default Deck;
