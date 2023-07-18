@@ -3,15 +3,12 @@ import { BlackjackStrategy } from '../strategies/utils';
 import { inspect } from '@xstate/inspect';
 import { raiseError } from '~/utils/helpers';
 import { Card } from '../deck';
+import { calculateHand } from '../calculateHand';
 inspect();
-type Hand = {
+export type Hand = {
   cards: Card[];
   bet: number;
   isFinished: boolean;
-  getCounts: () => {
-    valid: number[];
-    bust?: number;
-  };
 };
 export type Player = {
   id: string;
@@ -452,7 +449,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
       guards: {
         canHit: ({ context, event }) => {
           const { hand } = getCurrentTurnHand(context);
-          return hand.getCounts().valid.length > 0;
+          return calculateHand(hand.cards).validCounts.length > 0;
         },
         canDouble: ({ context, event }) => {
           const { hand } = getCurrentTurnHand(context);
@@ -460,14 +457,13 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
         },
         isOver21: ({ context, event }) => {
           const { hand } = getCurrentTurnHand(context);
-          return hand.getCounts().valid.length === 0;
+          return calculateHand(hand.cards).validCounts.length === 0;
         },
         dealerHasFinalHand: ({ context, event }) => {
           const { dealerMustHitOnSoft17 } = gameSettings;
 
           const { hand } = context.dealer;
-          const counts = hand.getCounts();
-          const validCounts = counts.valid;
+          const validCounts = calculateHand(hand.cards).validCounts;
           return (
             validCounts.length === 0 ||
             validCounts[0]! > 17 ||

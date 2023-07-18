@@ -3,7 +3,6 @@ import { useActor } from '@xstate/react';
 import { createContext, useContext } from 'react';
 import { Player, createGameMachine } from './gameMachine';
 import { useDeckStore } from '~/stores/deckStore';
-import { calculateHand } from '../calculateHand';
 
 type Context = ReturnType<typeof useGameMachineContext>;
 export const GameMachineContext = createContext<Context | null>(null);
@@ -31,7 +30,6 @@ const initPlayers: Player[] = [
     strategy: 'counting',
   },
 ];
-
 function useGameMachineContext() {
   const { deck, drawCard, shuffle } = useDeckStore();
   const gameMachine = createGameMachine({
@@ -50,13 +48,6 @@ function useGameMachineContext() {
         id: 'dealer',
         hand: {
           cards: [],
-          getCounts: function () {
-            const counts = calculateHand(this.cards);
-            return {
-              valid: counts.validCounts,
-              bust: counts.bustCount,
-            };
-          },
           isFinished: false,
         },
       },
