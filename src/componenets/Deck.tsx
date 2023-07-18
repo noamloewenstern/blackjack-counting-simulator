@@ -1,38 +1,39 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useDeckStore } from '../stores/deckStore';
 import { useGameStore } from '../stores/gameStore';
 import { useCountStore } from '../stores/countStore';
+import { useGameMachine } from '~/lib/machines/gameMachineContext';
 
-let clickedInitStartedGame = false;
+const clickedInitStartedGame = false;
 const Deck = () => {
   const deck = useDeckStore(state => state.deck);
-  const startGame = useGameStore(state => state.startGame);
-  const initDealState = useGameStore(state => state.initDealState);
-  const dealerFinalCount = useGameStore(state => state.dealer.finalCount);
-  const didGameStart = useGameStore(state => state.didGameStart);
-  const didGameEnd = didGameStart && dealerFinalCount > 0;
+  const { state, send } = useGameMachine();
+  const isOnInitGame = state.matches('initial');
+  const isWaitingForPlayersBets = state.matches('placePlayerBets');
 
-  const players = useGameStore(state => state.players);
-  const areAllPlayersReady = players.every(player => player.ready);
+  // const didRoundStart = !isOnInitGame;
+  const didRoundEnd = state.matches('finalizeRound');
+
+  const allPlayersSetBets = state.context.players.every(player => player.hands.every(hand => hand.bet > 0));
 
   const [runningCount, getAbsoluteCount] = useCountStore(state => [state.runningCount, state.getAbsoluteCount]);
 
   const handleStartGame = async () => {
-    await startGame();
+    send({ type: 'START_GAME' });
   };
   const handleDealAnotherRound = () => {
-    initDealState();
+    send({ type: 'DEAL_ANOTHER_ROUND' });
   };
 
-  useEffect(() => {
-    if (!clickedInitStartedGame && !didGameStart && areAllPlayersReady) {
-      clickedInitStartedGame = true;
-      setTimeout(startGame, 300);
-    }
-    if (didGameStart) {
-      clickedInitStartedGame = false;
-    }
-  }, [areAllPlayersReady, didGameStart, startGame]);
+  // useEffect(() => {
+  //   if (!clickedInitStartedGame && !didRoundStart && areAllPlayersReady) {
+  //     clickedInitStartedGame = true;
+  //     setTimeout(startGame, 300);
+  //   }
+  //   if (didRoundStart) {
+  //     clickedInitStartedGame = false;
+  //   }
+  // }, [areAllPlayersReady, didRoundStart, startGame]);
 
   return (
     <>
@@ -44,19 +45,17 @@ const Deck = () => {
             <p>Absolute Count: {getAbsoluteCount()}</p>
           </div>
 
-          {!didGameStart && areAllPlayersReady && (
+          {isOnInitGame && (
             <button
-              disabled={!areAllPlayersReady}
+              // disabled={!allPlayersSetBets}
               onClick={handleStartGame}
-              className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ${
-                !areAllPlayersReady && 'disabled'
-              }`}
+              className={`bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded`}
             >
               Start Game
             </button>
           )}
 
-          {didGameEnd && (
+          {didRoundEnd && (
             <button
               onClick={handleDealAnotherRound}
               className='bg-blue-500 hover:bg-blue-700
@@ -67,7 +66,7 @@ const Deck = () => {
           )}
         </div>
       </div>
-      {!areAllPlayersReady && (
+      {isWaitingForPlayersBets && (
         <h2 className={`bg-orange-800 fixed text-white font-bold py-2 px-4 rounded top-1/4`}>Setup Bets!</h2>
       )}
     </>

@@ -60,7 +60,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
       states: {
         initial: {
           on: {
-            INIT_GAME: {
+            START_GAME: {
               target: 'placePlayerBets',
               // actions: ['shuffleDeck', 'initContext'],
               actions: ['shuffleDeck'],
@@ -182,7 +182,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
           },
           onDone: [
             {
-              target: 'determineOutcome',
+              target: 'finalizeRound',
               guard: 'dealerHasFinalHand',
             },
             {
@@ -194,7 +194,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
           entry: 'setDealerTurn',
           always: [
             {
-              target: 'determineOutcome',
+              target: 'finalizeRound',
               guard: 'dealerHasFinalHand',
             },
             {
@@ -206,12 +206,21 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
               actions: ['hitDealer', 'testFinishedDealerTurn'],
             },
             FINISHED_DEALER_TURN: {
-              target: 'determineOutcome',
+              target: 'finalizeRound',
             },
           },
         },
-        determineOutcome: {
-          entry: ['setPlayersRoundOutcome', 'finalizePlayersBalance'],
+        finalizeRound: {
+          entry: ['setPlayersRoundOutcome', 'finalizePlayersBalance', 'showRoundOutcome'],
+          on: {
+            CLEAR_TABLE_ROUND: {
+              actions: ['clearTableCards', 'clearPlayersBets'],
+            },
+            DEAL_ANOTHER_ROUND: {
+              actions: ['clearTableCards', 'clearPlayersBets'],
+              target: 'placePlayerBets',
+            },
+          },
         },
       },
 
@@ -219,8 +228,9 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
         // input: {
         //   gameSettings: GameSettings;
         // };
+
         events:
-          | { type: 'INIT_GAME' }
+          | { type: 'START_GAME' }
           | { type: 'HIT' }
           | { type: 'STAND' }
           | { type: 'DOUBLE' }
@@ -246,9 +256,9 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
           | {
               type: 'HIT_DEALER';
             }
-          | {
-              type: 'FINISHED_DEALER_TURN';
-            };
+          | { type: 'FINISHED_DEALER_TURN' }
+          | { type: 'DEAL_ANOTHER_ROUND' }
+          | { type: 'CLEAR_TABLE_ROUND' };
       },
     },
     {
