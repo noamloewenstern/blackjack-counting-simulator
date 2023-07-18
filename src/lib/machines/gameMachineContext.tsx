@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useActor } from '@xstate/react';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { Player, createGameMachine } from './gameMachine';
 import { useDeckStore } from '~/stores/deckStore';
 
@@ -57,10 +57,18 @@ function useGameMachineContext() {
   });
 
   const [state, send, service] = useActor(gameMachine);
+
+  const allPlayersSetBets = useMemo(
+    () => state.context.players.every(player => player.hands.every(hand => hand.bet > 0)),
+    [state.context.players],
+  );
+  const isRoundFinished = state.matches('finalizeRound');
   const context = {
     state,
     send,
     service,
+    allPlayersSetBets,
+    isRoundFinished,
   };
   return context;
 }
