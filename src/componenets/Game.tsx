@@ -1,3 +1,4 @@
+import { GameMachineProvider } from '~/lib/machines/gameMachineContext';
 import { useGameStore } from '../stores/gameStore';
 import Dealer from './Dealer';
 import Deck from './Deck';
@@ -8,14 +9,16 @@ export default function Game() {
 
   return (
     <div className='game'>
-      <Deck />
-      <Dealer />
-      <div className='h-20' />
-      <div className='flex content-between justify-around'>
-        {players.map(player => (
-          <Player key={player.id} player={player} />
-        ))}
-      </div>
+      <GameMachineProvider>
+        <Deck />
+        <Dealer />
+        <div className='h-20' />
+        <div className='flex content-between justify-around'>
+          {players.map(player => (
+            <Player key={player.id} player={player} />
+          ))}
+        </div>
+      </GameMachineProvider>
     </div>
   );
 }
