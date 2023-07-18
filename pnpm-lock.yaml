@@ -11,6 +11,9 @@ dependencies:
   '@total-typescript/ts-reset':
     specifier: ^0.4.2
     version: 0.4.2
+  '@xstate/inspect':
+    specifier: ^0.8.0
+    version: 0.8.0(ws@8.13.0)(xstate@5.0.0-beta.18)
   '@xstate/react':
     specifier: 4.0.0-beta.8
     version: 4.0.0-beta.8(@types/react@18.2.15)(react@18.2.0)(xstate@5.0.0-beta.18)
@@ -1523,6 +1526,21 @@ packages:
       - supports-color
     dev: true
 
+  /@xstate/inspect@0.8.0(ws@8.13.0)(xstate@5.0.0-beta.18):
+    resolution: {integrity: sha512-wSkFeOnp+7dhn+zTThO0M4D2FEqZN9lGIWowJu5JLa2ojjtlzRwK8SkjcHZ4rLX8VnMev7kGjgQLrGs8kxy+hw==}
+    peerDependencies:
+      '@types/ws': ^8.0.0
+      ws: ^8.0.0
+      xstate: ^4.37.0
+    peerDependenciesMeta:
+      '@types/ws':
+        optional: true
+    dependencies:
+      fast-safe-stringify: 2.1.1
+      ws: 8.13.0
+      xstate: 5.0.0-beta.18
+    dev: false
+
   /@xstate/machine-extractor@0.10.0(xstate@4.38.1):
     resolution: {integrity: sha512-jsnYU9Y0DfFQCisY0IGxjmFrU6y3aqdBXBNohasxHiKHfuItkk4AUAQ+07MykJ+RiczXIYqYQNu5DvZAfCqKCA==}
     peerDependencies:
@@ -2319,6 +2337,10 @@ packages:
   /fast-levenshtein@2.0.6:
     resolution: {integrity: sha512-DCXu6Ifhqcks7TZKY3Hxp3y6qphY5SJZmrWMDrKcERSOXWQdMhU9Ig/PYrzyw/ul9jOIyh0N4M0tbC5hodg8dw==}
     dev: true
+
+  /fast-safe-stringify@2.1.1:
+    resolution: {integrity: sha512-W+KJc2dmILlPplD/H4K9l9LcAHAfPtP6BY84uVLXQ6Evcz9Lcg33Y2z1IVblT6xdY54PXYVHEv+0Wpq8Io6zkA==}
+    dev: false
 
   /fastq@1.15.0:
     resolution: {integrity: sha512-wBrocU2LCXXa+lWBt8RoIRD89Fi8OdABODa/kEnyeyjS5aZO5/GNvI5sEINADqP/h8M29UHTHUb53sUu5Ihqdw==}
@@ -4296,6 +4318,19 @@ packages:
       imurmurhash: 0.1.4
       signal-exit: 3.0.7
     dev: true
+
+  /ws@8.13.0:
+    resolution: {integrity: sha512-x9vcZYTrFPC7aSIbj7sRCYo7L/Xb8Iy+pW0ng0wt2vCJv7M9HOMy0UoN3rr+IFC7hb7vXoqS+P9ktyLLLhO+LA==}
+    engines: {node: '>=10.0.0'}
+    peerDependencies:
+      bufferutil: ^4.0.1
+      utf-8-validate: '>=5.0.2'
+    peerDependenciesMeta:
+      bufferutil:
+        optional: true
+      utf-8-validate:
+        optional: true
+    dev: false
 
   /xstate@4.38.1:
     resolution: {integrity: sha512-1gBUcFWBj/rv/pRcP2Bedl5sNRGX2d36CaOx9z7fE9uSiHaOEHIWzLg1B853q2xdUHUA9pEiWKjLZ3can4SJaQ==}
