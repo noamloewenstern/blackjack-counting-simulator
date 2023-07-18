@@ -2,24 +2,18 @@ import { assign, createMachine, fromCallback, pure, raise } from 'xstate';
 import { BlackjackStrategy } from '../strategies/utils';
 import { inspect } from '@xstate/inspect';
 import { raiseError } from '~/utils/helpers';
-import { calculateHand } from '../calculateHand';
+import { Card } from '../deck';
 inspect();
-type Card = {
-  suit: string;
-  value: string;
-  isVisible: boolean;
-};
 type Hand = {
   cards: Card[];
   bet: number;
   isFinished: boolean;
   getCounts: () => {
-    isSoft: () => boolean;
     valid: number[];
     bust?: number;
   };
 };
-type Player = {
+export type Player = {
   id: string;
   name: string;
   balance: number;
@@ -28,13 +22,13 @@ type Player = {
 };
 type Dealer = {
   id: 'dealer';
-  hand: Hand;
+  hand: Omit<Hand, 'bet'>;
 };
 type Context = {
   // deck: Card[];
   players: Player[];
   dealer: Dealer;
-  playerHandTurn: 'dealer' | `${number}.${number}`;
+  playerHandTurn?: 'dealer' | `${number}.${number}`;
 };
 type GameSettings = {
   numberDecksInShoe: number;
@@ -42,6 +36,7 @@ type GameSettings = {
   allowedToDoubleAfterSplit: boolean;
 };
 function getCurrentTurnHand({ players, playerHandTurn }: Pick<Context, 'players' | 'playerHandTurn'>) {
+  if (!playerHandTurn) raiseError('No player hand turn');
   const [playerIdx, handIdx] = playerHandTurn.split('.').map(Number).filter(Number.isInteger) as [number, number];
   const player = players[playerIdx]!;
   const hand = player.hands[handIdx]!;
@@ -54,23 +49,21 @@ type MachineProps = {
     drawCard: () => Card;
   };
   gameSettings: GameSettings;
+  initContext: Context;
 };
-export const machine = ({ deck, gameSettings }: MachineProps) =>
+export const createGameMachine = ({ deck, gameSettings, initContext }: MachineProps) =>
   createMachine(
     {
       id: 'BlackjackGameMachine',
-      context: {
-        players: [] as Player[],
-        dealer: {} as Dealer,
-        playerHandTurn: '' as 'dealer' | `${number}.${number}`,
-      } satisfies Context,
+      context: initContext,
       initial: 'initial',
       states: {
         initial: {
           on: {
             INIT_GAME: {
               target: 'placePlayerBets',
-              actions: ['shuffleDeck', 'initContext'],
+              // actions: ['shuffleDeck', 'initContext'],
+              actions: ['shuffleDeck'],
             },
           },
         },
@@ -330,7 +323,7 @@ export const machine = ({ deck, gameSettings }: MachineProps) =>
             });
           },
         }),
-        // initContext: assign({}), // ! todo
+        // initContext: assign(initContext), // ! todo
         hitDealer: assign(({ context }) => {
           const card = deck.drawCard();
           return {
