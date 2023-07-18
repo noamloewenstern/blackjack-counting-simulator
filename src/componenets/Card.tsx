@@ -13,7 +13,7 @@ const Card = ({ card }: { card: CardType }) => {
 
   return (
     <div className={`bg-white rounded shadow-lg flex flex-col items-center justify-center w-16 h-24 ${color}`}>
-      <span>{card.number}</span>
+      <span>{card.value}</span>
       <span>{card.suit}</span>
     </div>
   );

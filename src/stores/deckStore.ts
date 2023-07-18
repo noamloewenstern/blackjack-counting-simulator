@@ -27,10 +27,10 @@ export const useDeckStore = create(
       const { deck } = get();
       if (!deck.length) throw new Error('No cards left in deck');
       const [card, ...rest] = deck;
-      card.isVisible = visible;
+      card!.isVisible = visible;
       set({ deck: rest });
-      useCountStore.getState().updateCount(card);
-      return card;
+      useCountStore.getState().updateCount(card!);
+      return card!;
     },
   })),
 );

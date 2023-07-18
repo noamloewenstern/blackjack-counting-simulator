@@ -2,7 +2,7 @@ import { useSettingsStore } from './settingsStore';
 import { create } from 'zustand';
 import { Card } from '../lib/deck';
 import { immer } from 'zustand/middleware/immer';
-import { calcHiLowCount } from '../lib/strategies/utils';
+import { COUNTING_STRATEGIES } from '../lib/strategies/utils';
 
 type CountStore = {
   runningCount: number;
@@ -23,7 +23,7 @@ export const useCountStore = create(
     updateCount: card => {
       if (!card.isVisible) return;
       set(state => {
-        state.runningCount += calcHiLowCount(card);
+        state.runningCount += COUNTING_STRATEGIES.calculate['Hi-Lo'](card);
       });
     },
     resetCount: () => {

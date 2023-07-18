@@ -10,7 +10,7 @@ import { calculateHand, getCardValues, isBlackJack } from '../lib/calculateHand'
 import { sleep } from '../utils/helpers';
 import { BlackjackStrategy } from '../lib/strategies/utils';
 
-export const isAce = (card: Card) => card.number === 'A';
+export const isAce = (card: Card) => card.value === 'A';
 export type PlayerId = 10 | 20 | 30;
 
 export type IPlayer = {
