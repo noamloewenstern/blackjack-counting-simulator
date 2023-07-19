@@ -9,14 +9,19 @@ export const HandContext = createContext<IHandContextState>({} as never);
 function useGetCalculateHandContext({ hand }: ProviderProps) {
   const { player, currentTurnInfo, isCurrentTurn } = usePlayer();
   const { validCounts, bustCount } = useMemo(() => {
-    return calculateHand(hand.cards);
-  }, [hand.cards]);
+    return currentTurnInfo
+      ? calculateHand(hand.cards)
+      : {
+          validCounts: [],
+          bustCount: 0,
+        };
+  }, [currentTurnInfo, hand.cards]);
 
   const counts = validCounts.length > 0 ? validCounts : [bustCount];
   const finalCount = validCounts[0] ?? bustCount;
   const didBust = validCounts.length === 0 && bustCount > 21;
   const isBlackjack = hand.cards.length === 2 && validCounts[0] === 21;
-  const isCurrentTurnHand = currentTurnInfo.hand.id === hand.id;
+  const isCurrentTurnHand = currentTurnInfo?.hand.id === hand.id;
 
   const handState = {
     player,

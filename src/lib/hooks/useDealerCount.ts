@@ -18,13 +18,13 @@ export function useDealerCount() {
   }, [dealerCards, dealerHasCards]);
 
   const { validCounts: visibleValidCounts, bustCount: VisibleBustCount } = useMemo(() => {
-    if (!dealerHasCards) return { validCounts: [], bustCount: 0 };
     if (allPlayersFinishedRound) {
       return {
         validCounts,
         bustCount,
       };
     }
+    if (!dealerHasCards || dealerCards.length === 1) return { validCounts: [], bustCount: 0 };
     return calculateHand(dealerCards.slice(1));
   }, [dealerHasCards, allPlayersFinishedRound, dealerCards, validCounts, bustCount]);
   const includeNonVisible = {
