@@ -1,4 +1,4 @@
-import { Card } from '../deck';
+import type { Card } from '../deck';
 
 export type BlackjackStrategy = 'interactive' | 'perfect-blackjack' | 'counting';
 

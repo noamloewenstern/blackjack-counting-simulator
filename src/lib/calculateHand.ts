@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { Card, Hand } from './deck';
+import { type Card } from './deck';
 import { LRUCache } from 'lru-cache';
 import { groupBy, raiseError } from '~/utils/helpers';
 
@@ -91,7 +91,7 @@ export function isBlackjack(hand: Card[] | Card['value'][]) {
   return validCounts[0] === 21;
 }
 
-export function useHasBlackjack(hand: Hand) {
+export function useHasBlackjack(hand: Card[]) {
   return useMemo(() => {
     return hand.length === 2 && calculateHand(hand).validCounts[0] === 21;
   }, [hand]);

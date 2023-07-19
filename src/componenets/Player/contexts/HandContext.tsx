@@ -1,7 +1,7 @@
 import { type ReactNode, createContext, useContext, useMemo } from 'react';
 import { calculateHand } from '~/lib/calculateHand';
-import { type Hand } from '~/lib/machines/gameMachine';
 import usePlayer from '../hooks/usePlayer';
+import { type Hand } from '~/lib/deck';
 
 type IHandContextState = ReturnType<typeof useGetCalculateHandContext>;
 export const HandContext = createContext<IHandContextState>({} as never);

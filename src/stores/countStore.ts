@@ -1,6 +1,6 @@
 import { useSettingsStore } from './settingsStore';
 import { create } from 'zustand';
-import { Card } from '../lib/deck';
+import type { Card } from '../lib/deck';
 import { immer } from 'zustand/middleware/immer';
 import { COUNTING_STRATEGIES } from '../lib/strategies/utils';
 

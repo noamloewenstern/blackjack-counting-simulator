@@ -1,6 +1,6 @@
 import { useSettingsStore } from './settingsStore';
 import { create } from 'zustand';
-import { Card, createDeck, shuffleDeck } from '../lib/deck';
+import { type Card, createDeck, shuffleDeck } from '../lib/deck';
 import { immer } from 'zustand/middleware/immer';
 import { useRunningCount } from './countStore';
 

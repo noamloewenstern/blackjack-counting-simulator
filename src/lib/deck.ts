@@ -10,7 +10,12 @@ export type Card = {
   isVisible: boolean;
 };
 export type Deck = Card[];
-export type Hand = Card[];
+export type Hand = {
+  id: string;
+  cards: Card[];
+  bet: number;
+  isFinished: boolean;
+};
 
 export function shuffleDeck(deck: Card[]): Card[] {
   for (let i = deck.length - 1; i > 0; i--) {

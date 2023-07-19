@@ -1,5 +1,5 @@
 import { calculateHand } from '../calculateHand';
-import { Card } from '../deck';
+import type { Card } from '../deck';
 
 export function isHandBlackjack(cards: Card[]) {
   if (cards.length !== 2) return false;

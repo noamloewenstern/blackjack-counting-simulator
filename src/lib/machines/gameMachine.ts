@@ -2,15 +2,10 @@ import { assign, createMachine, fromCallback, pure, raise } from 'xstate';
 import { BlackjackStrategy } from '../strategies/utils';
 import { inspect } from '@xstate/inspect';
 import { raiseError } from '~/utils/helpers';
-import { Card } from '../deck';
+import type { Card, Hand } from '../deck';
 import { calculateHand, isBlackjack } from '../calculateHand';
 inspect();
-export type Hand = {
-  id: string;
-  cards: Card[];
-  bet: number;
-  isFinished: boolean;
-};
+
 export type Player = {
   id: string;
   name: string;

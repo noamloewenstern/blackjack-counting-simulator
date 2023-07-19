@@ -1,4 +1,4 @@
-import { Card as CardType } from '../lib/deck';
+import type { Card as CardType } from '../lib/deck';
 
 const Card = ({ card }: { card: CardType }) => {
   if (!card || !card.isVisible) {
