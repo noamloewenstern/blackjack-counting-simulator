@@ -15,6 +15,7 @@ export type Hand = {
   cards: Card[];
   bet: number;
   isFinished: boolean;
+  isReady: boolean;
 };
 
 export function shuffleDeck(deck: Card[]): Card[] {

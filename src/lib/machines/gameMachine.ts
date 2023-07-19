@@ -1,7 +1,7 @@
 import { assign, createMachine, fromCallback, pure, raise } from 'xstate';
 import { BlackjackStrategy } from '../strategies/utils';
 // import { inspect } from '@xstate/inspect';
-import { raiseError } from '~/utils/helpers';
+import { raiseError, sleep } from '~/utils/helpers';
 import type { Card, Hand } from '../deck';
 import { calculateHand, isBlackjack } from '../calculateHand';
 // inspect();
@@ -69,7 +69,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
               always: [
                 {
                   target: 'allBetsPlaced',
-                  guard: 'allPlayersSetBet',
+                  guard: 'allPlayersSetBetAndReady',
                 },
               ],
               on: {
@@ -102,10 +102,11 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
                 guard: 'allPlayersGot2Cards',
               },
               on: {
-                HIT_HAND: {
-                  // target: 'waitForActionToDealCard',
-                  // reenter: true,
-                  actions: 'hitHand',
+                HIT_PLAYER: {
+                  actions: 'hitPlayerHand',
+                },
+                HIT_DEALER: {
+                  actions: 'hitDealerHand',
                 },
                 FINISHED_DEALING_INIT_CARDS: {
                   // ? invoked from DealHandsToPlayersAndDealer
@@ -135,7 +136,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
                   // target: 'waitForPlayerAction',
                   // reenter: true,
                   guard: 'canHit',
-                  actions: 'hitHand',
+                  actions: 'hitPlayerHand',
                 },
                 STAND: {
                   target: 'finishedPlayerAction',
@@ -143,7 +144,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
                 DOUBLE: {
                   target: 'finishedPlayerAction',
                   guard: 'canDouble',
-                  actions: ['hitHand', 'doubleBet'],
+                  actions: ['hitPlayerHand', 'doubleBet'],
                 },
                 SPLIT: {
                   target: 'waitForPlayerAction',
@@ -192,7 +193,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
           ],
           on: {
             HIT_DEALER: {
-              actions: ['hitDealer', 'testFinishedDealerTurn'],
+              actions: ['hitDealerHand', 'testFinishedDealerTurn'],
             },
             FINISHED_DEALER_TURN: {
               target: 'finalizeRound',
@@ -248,7 +249,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
               };
             }
           | {
-              type: 'HIT_HAND';
+              type: 'HIT_PLAYER';
               params?: {
                 playerIdx: number;
                 handIdx: number;
@@ -264,10 +265,15 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
                 playerId: Player['id'];
                 handIdx: HandIdx;
                 bet: number;
+                aggregateBet?: boolean;
+                isReady?: boolean;
               };
             }
           | {
               type: 'HIT_DEALER';
+              params?: {
+                visible?: boolean;
+              };
             }
           | { type: 'FINISHED_DEALER_TURN' }
           | { type: 'DEAL_ANOTHER_ROUND' }
@@ -279,10 +285,9 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
         shuffleDeck: () => {
           deck.shuffleDeck();
         },
-        hitHand: assign(({ context, event, action }) => {
-          if (event.type !== 'HIT_HAND') raiseError('Wrong event type');
-          console.log({ event, action });
-          const params = (event.params || (action.params as typeof event.params)) ?? raiseError('No params found');
+        hitPlayerHand: assign(({ context, event }) => {
+          if (event.type !== 'HIT_PLAYER') raiseError('Wrong event type');
+          const params = event.params;
           // TODO: check if gets params from action/event:
 
           function getParams() {
@@ -298,20 +303,8 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
               return { playerIdx, handIdx, dealer, visible, player, hand };
             }
           }
-          const { playerIdx, handIdx, dealer, visible, player, hand } = getParams();
+          const { playerIdx, handIdx, visible, player, hand } = getParams();
           const card = deck.drawCard({ visible });
-
-          if (dealer) {
-            return {
-              dealer: {
-                ...context.dealer,
-                hand: {
-                  ...context.dealer.hand,
-                  cards: context.dealer.hand.cards.concat(card),
-                },
-              },
-            };
-          }
           return {
             players: context.players.with(playerIdx, {
               ...player,
@@ -320,6 +313,20 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
                 cards: hand.cards.concat(card),
               }),
             }),
+          };
+        }),
+        hitDealerHand: assign(({ context, event }) => {
+          if (event.type !== 'HIT_DEALER') raiseError('Wrong event type');
+          const visible = event.params?.visible || true;
+          const card = deck.drawCard({ visible });
+          return {
+            dealer: {
+              ...context.dealer,
+              hand: {
+                ...context.dealer.hand,
+                cards: context.dealer.hand.cards.concat(card),
+              },
+            },
           };
         }),
         doubleBet: assign(({ context }) => {
@@ -347,18 +354,6 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
           },
         }),
         // initContext: assign(initContext), // ! todo
-        hitDealer: assign(({ context }) => {
-          const card = deck.drawCard();
-          return {
-            dealer: {
-              ...context.dealer,
-              hand: {
-                ...context.dealer.hand,
-                cards: context.dealer.hand.cards.concat(card),
-              },
-            },
-          };
-        }),
         setPlayersRoundOutcome: assign({}),
         finalizePlayersBalance: assign({}),
         setBlackjackHandsAsFinished: assign(({ context }) => {
@@ -408,9 +403,10 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
           };
         }),
         setPlayerBet: assign(({ context, action, event }) => {
-          // if (event.type !== 'PLACE_BET') throw new Error('Wrong event type');
           if (event.type !== 'PLACE_BET') raiseError('Wrong event type');
-          const { playerId, handIdx = 0, bet } = event.params;
+          console.log({ action });
+
+          const { playerId, handIdx = 0, bet, aggregateBet = false, isReady = false } = event.params;
           const playerIdx = context.players.findIndex(player => player.id === playerId);
           const player = context.players[playerIdx]!;
           return {
@@ -418,7 +414,8 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
               ...player,
               hands: player.hands.with(handIdx, {
                 ...player.hands[handIdx]!,
-                bet: player.hands[handIdx]!.bet + bet,
+                bet: aggregateBet ? player.hands[handIdx]!.bet + bet : bet,
+                isReady,
               }),
             }),
           };
@@ -445,22 +442,24 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
         }),
       },
       actors: {
-        DealHandsToPlayersAndDealer: fromCallback((sendBack, _, { input }) => {
+        DealHandsToPlayersAndDealer: fromCallback(async (sendBack, _, { input }) => {
           const { playersIdxs } = input as { playersIdxs: number[] };
-          const dealToPlayers = () => {
-            playersIdxs.forEach(playerIdx => {
+          const dealToPlayers = async () => {
+            for (const playerIdx of playersIdxs) {
+              await sleep(500);
               sendBack({
-                type: 'HIT_HAND',
+                type: 'HIT_PLAYER',
                 params: {
                   playerIdx,
                   handIdx: 0, // should be 0, since it's the first hand, on the first deal of the round
                 },
               });
-            });
+            }
           };
-          const dealToDealer = ({ visible = true } = {}) => {
+          const dealToDealer = async ({ visible = true } = {}) => {
+            await sleep(500);
             sendBack({
-              type: 'HIT_HAND',
+              type: 'HIT_DEALER',
               params: {
                 playerId: 'dealer',
                 handIdx: 0,
@@ -469,10 +468,11 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
               },
             });
           };
-          dealToPlayers();
-          dealToDealer({ visible: false });
-          dealToPlayers();
-          dealToDealer();
+          await dealToPlayers();
+          await dealToDealer({ visible: false });
+          await dealToPlayers();
+          await dealToDealer();
+          await sleep(400);
           sendBack({ type: 'FINISHED_DEALING_INIT_CARDS' });
         }),
       },
@@ -514,8 +514,8 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
           const { hand } = getCurrentTurnHand(context);
           return hand.cards.length === 2 && hand.cards[0]!.value === hand.cards[1]!.value;
         },
-        allPlayersSetBet: ({ context }) => {
-          return context.players.every(player => player.hands.every(hand => hand.bet > 0));
+        allPlayersSetBetAndReady: ({ context }) => {
+          return context.players.every(player => player.hands.every(hand => hand.bet > 0 && hand.isReady));
         },
       },
     },

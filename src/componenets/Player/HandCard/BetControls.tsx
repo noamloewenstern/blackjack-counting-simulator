@@ -25,6 +25,7 @@ const useAutomateBetForCountingBots = ({ isReady, setIsReady }: { isReady: boole
             playerId: player.id,
             handIdx: 0, // init deal
             bet,
+            aggregateBet: false,
           },
         });
       };
@@ -45,20 +46,24 @@ const useAutomateBetForCountingBots = ({ isReady, setIsReady }: { isReady: boole
 };
 
 export default function BetControls() {
+  const { send } = useGameMachine();
+  const { player } = usePlayer();
   const { hand } = usePlayerHand();
-  const [isReady, setIsReady] = useState(false);
   const handleReady = () => {
     if (hand.bet === 0) {
       alert('No Bet Placed');
       return;
     }
-    setIsReady(true);
+    send({
+      type: 'PLACE_BET',
+      params: { playerId: player.id, handIdx: 0 /* init deal */, bet: hand.bet, aggregateBet: false, isReady: true },
+    });
   };
   const disableReady = hand.bet === 0;
 
-  useAutomateBetForCountingBots({ isReady, setIsReady: handleReady });
+  useAutomateBetForCountingBots({ isReady: hand.isReady, setIsReady: handleReady });
 
-  if (isReady) return <h3>Ready</h3>;
+  if (hand.isReady) return <h3>Ready</h3>;
 
   return (
     <div className='flex flex-wrap justify-center gap-4 max-w-[400px] mx-auto'>
@@ -92,7 +97,10 @@ const BetButton = ({ amount }: { amount: number }) => {
       alert('Not Enough Balance');
       return;
     }
-    send({ type: 'PLACE_BET', params: { playerId: player.id, handIdx: 0 /* init deal */, bet: betAmount } });
+    send({
+      type: 'PLACE_BET',
+      params: { playerId: player.id, handIdx: 0 /* init deal */, bet: betAmount, aggregateBet: true },
+    });
   };
 
   return (
