@@ -71,15 +71,9 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
                   target: 'allBetsPlaced',
                   guard: 'allPlayersSetBet',
                 },
-                {
-                  target: 'waitForBet',
-                  // reenter: true,
-                },
               ],
               on: {
                 PLACE_BET: {
-                  target: 'waitForBet', // todo: maybe not needed
-                  // reenter: true,
                   actions: 'setPlayerBet',
                 },
               },
