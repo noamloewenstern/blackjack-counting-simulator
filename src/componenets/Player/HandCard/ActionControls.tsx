@@ -17,7 +17,7 @@ export default function ActionControls() {
   const canDouble = hand.cards.length === 2 && hand.cards[0]!.value === hand.cards[1]!.value;
 
   const recommendedAction =
-    getActionByStrategy(hand.cards, visibleDealerCount.finalCount, {
+    getActionByStrategy(hand.cards, visibleDealerCount.validCounts[0]!, {
       allowedToDoubleAfterSplit,
       canDouble,
     }) || undefined;

@@ -37,7 +37,7 @@ export function useDealerCount() {
   const visible = dealerCards[0]?.isVisible
     ? includeNonVisible
     : {
-        finalCount: validCounts[0] ?? bustCount,
+        finalCount: visibleValidCounts[0] ?? VisibleBustCount,
         validCounts: visibleValidCounts,
         bustCount: VisibleBustCount,
         didBust: visibleValidCounts.length === 0 && VisibleBustCount > 21,
