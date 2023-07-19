@@ -37,6 +37,7 @@ function DealerCount() {
 function DealerCards() {
   const { state } = useGameMachine();
   const dealer = state.context.dealer;
+
   return (
     <div className='dealer min-h-24 rounded-lg p-4 flex justify-center gap-4 text-white'>
       {dealer.hand.cards.map((card, index) => (

@@ -109,7 +109,6 @@ function getHardAction(
   }
 
   if (!HardTotalAction[playerTotal]?.[dealerCount - 2]) {
-    console.log(`playerHand : ${playerTotal}`, playerHand);
     throw new Error(`Invalid playerTotal:${playerTotal} and dealerCount:${dealerCount} for hard hand`);
   }
   const action = HardTotalAction[playerTotal]?.[dealerCount - 2];
