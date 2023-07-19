@@ -13,12 +13,12 @@ type Actions = {
   resetCount: () => void;
 };
 
-export const useCountStore = create(
+export const useRunningCount = create(
   immer<CountStore & Actions>((set, get) => ({
     runningCount: 0,
     getAbsoluteCount: () => {
-      const { numberDecksInShoe: numberOfDecks } = useSettingsStore.getState();
-      return get().runningCount / numberOfDecks;
+      const { numberDecksInShoe } = useSettingsStore.getState();
+      return get().runningCount / numberDecksInShoe;
     },
     updateCount: card => {
       if (!card.isVisible) return;

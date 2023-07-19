@@ -2,7 +2,7 @@ import { useSettingsStore } from './settingsStore';
 import { create } from 'zustand';
 import { Card, createDeck, shuffleDeck } from '../lib/deck';
 import { immer } from 'zustand/middleware/immer';
-import { useCountStore } from './countStore';
+import { useRunningCount } from './countStore';
 
 type DeckStore = {
   deck: Card[];
@@ -29,7 +29,7 @@ export const useDeckStore = create(
       const [card, ...rest] = deck;
       card!.isVisible = visible;
       set({ deck: rest });
-      useCountStore.getState().updateCount(card!);
+      useRunningCount.getState().updateCount(card!);
       return card!;
     },
   })),

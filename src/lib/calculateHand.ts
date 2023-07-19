@@ -82,7 +82,7 @@ export function calculateHand(cards: Card[] | Card['value'][]): {
   return result;
 }
 
-export function isBlackJack(hand: Card[] | Card['value'][]) {
+export function isBlackjack(hand: Card[] | Card['value'][]) {
   if (hand.length !== 2) {
     return false;
   }
