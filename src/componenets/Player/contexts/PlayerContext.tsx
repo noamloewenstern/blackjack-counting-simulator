@@ -12,7 +12,8 @@ type ProviderProps = {
 function useGetCalculatePlayerContext(player: Player) {
   const { state } = useGameMachine();
   const { players, playerHandTurn } = state.context;
-  const currentTurnInfo = playerHandTurn && getCurrentTurnHand({ players, playerHandTurn });
+  const isCurrentlySomePlayerTurn = playerHandTurn && (playerHandTurn !== 'dealer' || undefined);
+  const currentTurnInfo = isCurrentlySomePlayerTurn && getCurrentTurnHand({ players, playerHandTurn });
   const isCurrentTurn = currentTurnInfo?.player.id === player.id;
 
   const playerState = {
