@@ -21,7 +21,6 @@ export const useRunningCount = create(
       return get().runningCount / numberDecksInShoe;
     },
     updateCount: card => {
-      if (!card.isVisible) return;
       set(state => {
         state.runningCount += COUNTING_STRATEGIES.calculate['Hi-Lo'](card);
       });

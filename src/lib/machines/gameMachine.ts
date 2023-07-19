@@ -1,4 +1,4 @@
-import { assign, createMachine, fromCallback, pure, raise } from 'xstate';
+import { assign, createMachine, fromCallback, fromPromise, pure, raise } from 'xstate';
 import { BlackjackStrategy } from '../strategies/utils';
 // import { inspect } from '@xstate/inspect';
 import { raiseError, sleep } from '~/utils/helpers';
@@ -45,8 +45,9 @@ type MachineProps = {
   };
   gameSettings: GameSettings;
   initContext: Context;
+  updateRunningCount: (card: Card) => void;
 };
-export const createGameMachine = ({ deck, gameSettings, initContext }: MachineProps) =>
+export const createGameMachine = ({ deck, gameSettings, initContext, updateRunningCount }: MachineProps) =>
   createMachine(
     {
       id: 'BlackjackGameMachine',
@@ -94,32 +95,17 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
               playersIdxs: Array.from({ length: context.players.length }, (_, i) => i),
             }),
           },
-          initial: 'waitForActionToDealCard',
-          states: {
-            waitForActionToDealCard: {
-              always: {
-                target: 'doneDealingInitCards',
-                guard: 'allPlayersGot2Cards',
-              },
-              on: {
-                HIT_PLAYER: {
-                  actions: 'hitPlayerHand',
-                },
-                HIT_DEALER: {
-                  actions: 'hitDealerHand',
-                },
-                FINISHED_DEALING_INIT_CARDS: {
-                  // ? invoked from DealHandsToPlayersAndDealer
-                  target: 'doneDealingInitCards',
-                },
-              },
+          on: {
+            HIT_PLAYER: {
+              actions: 'hitPlayerHand',
             },
-            doneDealingInitCards: {
-              type: 'final',
+            HIT_DEALER: {
+              actions: 'hitDealerHand',
             },
-          },
-          onDone: {
-            target: 'playersTurn',
+            FINISHED_DEALING_INIT_CARDS: {
+              target: 'playersTurn',
+              guard: 'allPlayersGot2Cards',
+            },
           },
         },
         playersTurn: {
@@ -181,19 +167,26 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
           ],
         },
         dealerTurn: {
-          entry: 'setDealerTurn',
+          entry: ['setDealerTurn'], // setting first card as visible
+          invoke: {
+            // updateing running count for the dealer's first card, since it's visible now
+            src: fromPromise(async ({ input: card }) => {
+              updateRunningCount(card);
+            }),
+            input: ({ context }: { context: Context }) => context.dealer.hand.cards[0]!,
+          },
           always: [
             {
               target: 'finalizeRound',
               guard: 'dealerHasFinalHand',
             },
             {
-              actions: raise({ type: 'HIT_DEALER' }),
+              // actions: raise({ type: 'HIT_DEALER' }),
             },
           ],
           on: {
             HIT_DEALER: {
-              actions: ['hitDealerHand', 'testFinishedDealerTurn'],
+              actions: ['hitDealerHand', 'sendEventIfFinishedDealerTurn'],
             },
             FINISHED_DEALER_TURN: {
               target: 'finalizeRound',
@@ -433,7 +426,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
             },
           }),
         }),
-        testFinishedDealerTurn: pure(({ context }) => {
+        sendEventIfFinishedDealerTurn: pure(({ context }) => {
           // todo: test if dealer has finished turn
           const dealerHasFinalHand = true;
           if (dealerHasFinalHand) {

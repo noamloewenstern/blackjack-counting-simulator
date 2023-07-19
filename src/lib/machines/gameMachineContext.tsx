@@ -4,7 +4,7 @@ import { createContext, useContext, useEffect, useMemo } from 'react';
 import { Player, createGameMachine } from './gameMachine';
 import { useDeckStore } from '~/stores/deckStore';
 import { useSettingsStore } from '~/stores/settingsStore';
-import { Card } from '../deck';
+import { useRunningCount } from '~/stores/countStore';
 
 type Context = ReturnType<typeof useGameMachineContext>;
 export const GameMachineContext = createContext<Context | null>(null);
@@ -59,6 +59,7 @@ const initPlayers: Player[] = [
 function useGameMachineContext() {
   const gameSettings = useSettingsStore();
   const { drawCard, shuffle } = useDeckStore();
+  const { updateCount } = useRunningCount();
   const gameMachine = createGameMachine({
     deck: {
       drawCard,
@@ -79,6 +80,7 @@ function useGameMachineContext() {
       playerHandTurn: undefined,
       players: initPlayers,
     },
+    updateRunningCount: card => updateCount(card),
   });
   const [state, send, service] = useActor(gameMachine, {
     devTools: true,

@@ -29,7 +29,9 @@ export const useDeckStore = create(
       const [card, ...rest] = deck;
       card!.isVisible = visible;
       set({ deck: rest });
-      useRunningCount.getState().updateCount(card!);
+      if (visible) {
+        useRunningCount.getState().updateCount(card!);
+      }
       return card!;
     },
   })),
