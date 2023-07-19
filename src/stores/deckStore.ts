@@ -18,8 +18,8 @@ export const useDeckStore = create(
 
     shuffle: () => {
       const { numberDecksInShoe: numberOfDecks } = useSettingsStore.getState();
-      const newDecks = new Array(numberOfDecks).fill(null).map(createDeck).flat();
-      const shuffledNewDeck = shuffleDeck(newDecks);
+      const newDecks = Array.from({ length: numberOfDecks }).map(createDeck).flat();
+      const shuffledNewDeck = shuffleDeck(shuffleDeck(newDecks));
       set({ deck: shuffledNewDeck });
       return shuffledNewDeck;
     },
