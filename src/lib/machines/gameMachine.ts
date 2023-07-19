@@ -1,4 +1,4 @@
-import { assign, createMachine, fromCallback, fromPromise, pure, raise } from 'xstate';
+import { assign, createMachine, fromCallback, fromPromise, log, pure, raise } from 'xstate';
 import { BlackjackStrategy } from '../strategies/utils';
 // import { inspect } from '@xstate/inspect';
 import { raiseError, sleep } from '~/utils/helpers';
@@ -47,6 +47,13 @@ type MachineProps = {
   initContext: Context;
   updateRunningCount: (card: Card) => void;
 };
+type hitPlayerHandParams = {
+  playerIdx: number;
+  handIdx: number;
+  dealer?: boolean;
+  visible?: boolean;
+};
+
 export const createGameMachine = ({ deck, gameSettings, initContext, updateRunningCount }: MachineProps) =>
   createMachine(
     {
@@ -114,8 +121,8 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           states: {
             waitForPlayerAction: {
               always: {
-                guard: 'isOver21',
-                actions: raise({ type: 'STAND' }),
+                guard: 'isHand21OrMore',
+                target: 'finishedPlayerAction',
               },
               on: {
                 HIT: {
@@ -126,8 +133,8 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
                   target: 'finishedPlayerAction',
                 },
                 DOUBLE: {
-                  target: 'finishedPlayerAction',
                   guard: 'canDouble',
+                  target: 'finishedPlayerAction',
                   actions: ['hitPlayerHand', 'doubleBet'],
                 },
                 SPLIT: {
@@ -149,11 +156,12 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               entry: 'setHandAsFinished',
               always: [
                 {
+                  guard: 'isNotLastPlayedHand',
                   target: 'waitForPlayerAction',
                   actions: 'setPlayerTurn',
-                  guard: 'isNotLastPlayedHand',
                 },
                 {
+                  guard: 'isLastPlayedHand',
                   target: 'noMorePlayerActions',
                 },
               ],
@@ -222,39 +230,19 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           | { type: 'START_GAME' }
           | {
               type: 'HIT';
-              params?: {
-                playerIdx: number;
-                handIdx: number;
-                dealer?: boolean;
-                visible?: boolean;
-              };
+              params?: hitPlayerHandParams;
             }
           | {
               type: 'STAND';
-              params?: {
-                playerIdx: number;
-                handIdx: number;
-                dealer?: boolean;
-                visible?: boolean;
-              };
+              params?: hitPlayerHandParams;
             }
           | {
               type: 'DOUBLE';
-              params?: {
-                playerIdx: number;
-                handIdx: number;
-                dealer?: boolean;
-                visible?: boolean;
-              };
+              params?: hitPlayerHandParams;
             }
           | {
               type: 'HIT_PLAYER';
-              params?: {
-                playerIdx: number;
-                handIdx: number;
-                dealer?: boolean;
-                visible?: boolean;
-              };
+              params?: hitPlayerHandParams;
             }
           | { type: 'FINISHED_DEALING_INIT_CARDS' }
           | { type: 'SPLIT' }
@@ -280,9 +268,10 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           deck.shuffleDeck();
         },
         hitPlayerHand: assign(({ context, event }) => {
-          if (event.type !== 'HIT_PLAYER') raiseError('Wrong event type');
-          const params = event.params;
-          // TODO: check if gets params from action/event:
+          const allowedEvents = ['HIT', 'STAND', 'DOUBLE', 'HIT_PLAYER'] as const;
+          if (!allowedEvents.includes(event.type)) raiseError(`Wrong event type: ${event.type}`);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const params = (event as any).params as hitPlayerHandParams;
 
           function getParams() {
             if (!params) {
@@ -472,9 +461,10 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           const { hand } = getCurrentTurnHand(context);
           return hand.cards.length === 2;
         },
-        isOver21: ({ context, event }) => {
+        isHand21OrMore: ({ context }) => {
           const { hand } = getCurrentTurnHand(context);
-          return calculateHand(hand.cards).validCounts.length === 0;
+
+          return hand.cards.length > 0 && (calculateHand(hand.cards).validCounts[0] || 22) >= 21;
         },
         dealerHasFinalHand: ({ context, event }) => {
           const { dealerMustHitOnSoft17 } = gameSettings;
@@ -492,6 +482,10 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         },
         allPlayersGot2Cards: ({ context }) => {
           return context.players.every(player => player.hands.every(hand => hand.cards.length === 2));
+        },
+        isLastPlayedHand: ({ context }) => {
+          const { playerIdx, player, handIdx } = getCurrentTurnHand(context);
+          return playerIdx === context.players.length - 1 && handIdx === player.hands.length - 1;
         },
         isNotLastPlayedHand: ({ context }) => {
           const { playerIdx, player, handIdx } = getCurrentTurnHand(context);
