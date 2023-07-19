@@ -3,6 +3,7 @@ import { useActor } from '@xstate/react';
 import { createContext, useContext, useMemo } from 'react';
 import { Player, createGameMachine } from './gameMachine';
 import { useDeckStore } from '~/stores/deckStore';
+import { useSettingsStore } from '~/stores/settingsStore';
 
 type Context = ReturnType<typeof useGameMachineContext>;
 export const GameMachineContext = createContext<Context | null>(null);
@@ -31,22 +32,20 @@ const initPlayers: Player[] = [
   },
 ];
 function useGameMachineContext() {
-  const { deck, drawCard, shuffle } = useDeckStore();
+  const gameSettings = useSettingsStore();
+  const { drawCard, shuffle } = useDeckStore();
   const gameMachine = createGameMachine({
     deck: {
       drawCard,
       initDeck: () => shuffle(),
       shuffleDeck: () => shuffle(),
     },
-    gameSettings: {
-      allowedToDoubleAfterSplit: true,
-      dealerMustHitOnSoft17: true,
-      numberDecksInShoe: 6,
-    },
+    gameSettings: gameSettings,
     initContext: {
       dealer: {
         id: 'dealer',
         hand: {
+          id: 'dealerHand',
           cards: [],
           isFinished: false,
         },
@@ -63,12 +62,18 @@ function useGameMachineContext() {
     [state.context.players],
   );
   const isRoundFinished = state.matches('finalizeRound');
+  const isPlayersTurn = state.matches('playersTurn.*');
+  const isWaitingForBets = state.matches('placePlayerBets');
+
   const context = {
     state,
+    context: state.context,
     send,
     service,
     allPlayersSetBets,
     isRoundFinished,
+    isPlayersTurn,
+    isWaitingForBets,
   };
   return context;
 }
