@@ -175,15 +175,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               type: 'final',
             },
           },
-          onDone: [
-            {
-              target: 'finalizeRound',
-              guard: 'dealerHasFinalHand',
-            },
-            {
-              target: 'dealerTurn',
-            },
-          ],
+          onDone: 'dealerTurn',
         },
         dealerTurn: {
           entry: ['setDealerTurn'], // setting first card as visible
@@ -201,13 +193,15 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
                 guard: 'dealerHasFinalHand',
               },
               {
-                actions: 'hitDealerHand',
+                actions: ['hitDealerHand'],
+                reenter: true,
               },
             ],
           },
         },
         finalizeRound: {
-          entry: ['setPlayersRoundOutcome', 'finalizePlayersBalance', 'showRoundOutcome'],
+          // todo: implement these actions
+          entry: ['setPlayersRoundOutcome', 'finalizePlayersBalance', 'showRoundOutcome', log('GOT TO: finalizeRound')],
           on: {
             CLEAR_TABLE_ROUND: {
               actions: ['clearTableCards', 'clearPlayersBets'],
@@ -297,8 +291,6 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           };
         }),
         hitDealerHand: assign(({ context, event }) => {
-          if (event.type !== 'HIT_DEALER') raiseError('Wrong event type');
-
           const isFirstCard = context.dealer.hand.cards.length === 0;
           const visible = !isFirstCard;
           const card = deck.drawCard({ visible });
@@ -386,7 +378,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             }),
           };
         }),
-        setPlayerBet: assign(({ context, action, event }) => {
+        setPlayerBet: assign(({ context, event }) => {
           if (event.type !== 'PLACE_BET') raiseError('Wrong event type');
           const { playerId, handIdx = 0, bet, aggregateBet = false, isReady = false } = event.params;
           const playerIdx = context.players.findIndex(player => player.id === playerId);
