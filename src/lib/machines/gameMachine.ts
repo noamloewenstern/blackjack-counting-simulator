@@ -3,9 +3,10 @@ import { BlackjackStrategy } from '../strategies/utils';
 import { inspect } from '@xstate/inspect';
 import { raiseError } from '~/utils/helpers';
 import { Card } from '../deck';
-import { calculateHand } from '../calculateHand';
+import { calculateHand, isBlackjack } from '../calculateHand';
 inspect();
 export type Hand = {
+  id: string;
   cards: Card[];
   bet: number;
   isFinished: boolean;
@@ -21,18 +22,20 @@ type Dealer = {
   id: 'dealer';
   hand: Omit<Hand, 'bet'>;
 };
+type PlayerIdx = number;
+type HandIdx = number;
 type Context = {
   // deck: Card[];
   players: Player[];
   dealer: Dealer;
-  playerHandTurn?: 'dealer' | `${number}.${number}`;
+  playerHandTurn?: 'dealer' | `${PlayerIdx}.${HandIdx}`;
 };
 type GameSettings = {
   numberDecksInShoe: number;
   dealerMustHitOnSoft17: boolean;
   allowedToDoubleAfterSplit: boolean;
 };
-function getCurrentTurnHand({ players, playerHandTurn }: Pick<Context, 'players' | 'playerHandTurn'>) {
+export function getCurrentTurnHand({ players, playerHandTurn }: Pick<Context, 'players' | 'playerHandTurn'>) {
   if (!playerHandTurn) raiseError('No player hand turn');
   const [playerIdx, handIdx] = playerHandTurn.split('.').map(Number).filter(Number.isInteger) as [number, number];
   const player = players[playerIdx]!;
@@ -43,7 +46,7 @@ type MachineProps = {
   deck: {
     initDeck: () => void;
     shuffleDeck: () => void;
-    drawCard: () => Card;
+    drawCard: (opts?: { visible?: boolean }) => Card;
   };
   gameSettings: GameSettings;
   initContext: Context;
@@ -130,7 +133,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
           },
         },
         playersTurn: {
-          entry: ['setPlayerTurn'],
+          entry: ['setBlackjackHandsAsFinished', 'setPlayerTurn'],
           initial: 'waitForPlayerAction',
           states: {
             waitForPlayerAction: {
@@ -228,12 +231,36 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
 
         events:
           | { type: 'START_GAME' }
-          | { type: 'HIT' }
-          | { type: 'STAND' }
-          | { type: 'DOUBLE' }
+          | {
+              type: 'HIT';
+              params?: {
+                playerIdx: number;
+                handIdx: number;
+                dealer?: boolean;
+                visible?: boolean;
+              };
+            }
+          | {
+              type: 'STAND';
+              params?: {
+                playerIdx: number;
+                handIdx: number;
+                dealer?: boolean;
+                visible?: boolean;
+              };
+            }
+          | {
+              type: 'DOUBLE';
+              params?: {
+                playerIdx: number;
+                handIdx: number;
+                dealer?: boolean;
+                visible?: boolean;
+              };
+            }
           | {
               type: 'HIT_HAND';
-              params: {
+              params?: {
                 playerIdx: number;
                 handIdx: number;
                 dealer?: boolean;
@@ -246,7 +273,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
               type: 'PLACE_BET';
               params: {
                 playerId: Player['id'];
-                handIdx?: number;
+                handIdx: HandIdx;
                 bet: number;
               };
             }
@@ -264,14 +291,28 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
           deck.shuffleDeck();
         },
         hitHand: assign(({ context, event, action }) => {
-          console.log({ event, action });
           if (event.type !== 'HIT_HAND') raiseError('Wrong event type');
+          console.log({ event, action });
+          const params = (event.params || (action.params as typeof event.params)) ?? raiseError('No params found');
           // TODO: check if gets params from action/event:
-          /* !
-          // !
-          const { playerIdx, handIdx, dealer, visible } = action.params;
-          if(dealer){
-            const card = deck.drawCard({visible});
+
+          function getParams() {
+            if (!params) {
+              const { playerIdx, player, hand, handIdx } = getCurrentTurnHand(context);
+              const dealer = false;
+              const visible = true;
+              return { playerIdx, handIdx, dealer, visible, player, hand };
+            } else {
+              const { playerIdx, handIdx, dealer, visible = true } = params;
+              const player = context.players[playerIdx]!;
+              const hand = player.hands[handIdx]!;
+              return { playerIdx, handIdx, dealer, visible, player, hand };
+            }
+          }
+          const { playerIdx, handIdx, dealer, visible, player, hand } = getParams();
+          const card = deck.drawCard({ visible });
+
+          if (dealer) {
             return {
               dealer: {
                 ...context.dealer,
@@ -280,22 +321,8 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
                   cards: context.dealer.hand.cards.concat(card),
                 },
               },
+            };
           }
-          return {
-            players: context.players.with(playerIdx, {
-              ...player,
-              hands: player.hands.with(handIdx, {
-                ...hand,
-                cards: hand.cards.concat(card),
-              }),
-            }),
-          };
-          }
-           */
-
-          const { playerIdx, player, hand, handIdx } = getCurrentTurnHand(context);
-          const card = deck.drawCard();
-          // hand.cards.push(card);
           return {
             players: context.players.with(playerIdx, {
               ...player,
@@ -345,6 +372,20 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
         }),
         setPlayersRoundOutcome: assign({}),
         finalizePlayersBalance: assign({}),
+        setBlackjackHandsAsFinished: assign(({ context }) => {
+          return {
+            players: context.players.map(player => {
+              const hand = {
+                ...player.hands[0]!, // only has one hand, since it's the first deal of the round
+                isFinished: isBlackjack(player.hands[0]!.cards),
+              };
+              return {
+                ...player,
+                hands: [hand],
+              };
+            }),
+          };
+        }),
         setPlayerTurn: assign(({ context }) => {
           for (const [pIdx, player] of context.players.entries()) {
             for (const [hIdx, hand] of player.hands.entries()) {
@@ -388,7 +429,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext }: MachinePr
               ...player,
               hands: player.hands.with(handIdx, {
                 ...player.hands[handIdx]!,
-                bet,
+                bet: player.hands[handIdx]!.bet + bet,
               }),
             }),
           };
