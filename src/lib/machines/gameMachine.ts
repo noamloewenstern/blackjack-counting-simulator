@@ -262,12 +262,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
                 isReady?: boolean;
               };
             }
-          | {
-              type: 'HIT_DEALER';
-              params?: {
-                visible?: boolean;
-              };
-            }
+          | { type: 'HIT_DEALER' }
           | { type: 'FINISHED_DEALER_TURN' }
           | { type: 'DEAL_ANOTHER_ROUND' }
           | { type: 'CLEAR_TABLE_ROUND' };
@@ -310,8 +305,11 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         }),
         hitDealerHand: assign(({ context, event }) => {
           if (event.type !== 'HIT_DEALER') raiseError('Wrong event type');
-          const visible = event.params?.visible || true;
+
+          const isFirstCard = context.dealer.hand.cards.length === 0;
+          const visible = !isFirstCard;
           const card = deck.drawCard({ visible });
+
           return {
             dealer: {
               ...context.dealer,
@@ -397,8 +395,6 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         }),
         setPlayerBet: assign(({ context, action, event }) => {
           if (event.type !== 'PLACE_BET') raiseError('Wrong event type');
-          console.log({ action });
-
           const { playerId, handIdx = 0, bet, aggregateBet = false, isReady = false } = event.params;
           const playerIdx = context.players.findIndex(player => player.id === playerId);
           const player = context.players[playerIdx]!;
@@ -451,15 +447,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           };
           const dealToDealer = async ({ visible = true } = {}) => {
             await sleep(500);
-            sendBack({
-              type: 'HIT_DEALER',
-              params: {
-                playerId: 'dealer',
-                handIdx: 0,
-                dealer: true,
-                visible,
-              },
-            });
+            sendBack({ type: 'HIT_DEALER' });
           };
           await dealToPlayers();
           await dealToDealer({ visible: false });
