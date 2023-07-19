@@ -11,10 +11,12 @@ export default function ActionControls() {
   const hit = () => isCurrentTurnHand && send({ type: 'HIT' });
   const double = () => isCurrentTurnHand && send({ type: 'DOUBLE' });
   const stand = () => isCurrentTurnHand && send({ type: 'STAND' });
+  const split = () => isCurrentTurnHand && send({ type: 'SPLIT' });
 
   const { visible: visibleDealerCount } = useDealerCount();
   const { allowedToDoubleAfterSplit } = useSettingsStore();
-  const canDouble = hand.cards.length === 2 && hand.cards[0]!.value === hand.cards[1]!.value;
+  const canDouble = hand.cards.length === 2;
+  const canSplit = hand.cards.length === 2 && hand.cards[0]!.value === hand.cards[1]!.value;
 
   const recommendedAction =
     getActionByStrategy(hand.cards, visibleDealerCount.validCounts[0]!, {
@@ -61,18 +63,34 @@ export default function ActionControls() {
         Hit
       </button>
 
-      <button
-        disabled={!canDouble || !isCurrentTurnHand}
-        onClick={double}
-        className={`
+      {canDouble && (
+        <button
+          disabled={!canDouble || !isCurrentTurnHand}
+          onClick={double}
+          className={`
         ${strategy.recommendation === 'D' ? strategy.styles : ''}
         ${isCurrentTurnHand ? 'bg-purple-600 hover:bg-purple-700' : 'disabled'}
      text-white font-bold py-2 px-4 rounded
 
    `}
-      >
-        Double
-      </button>
+        >
+          Double
+        </button>
+      )}
+      {canSplit && (
+        <button
+          disabled={!isCurrentTurnHand}
+          onClick={split}
+          className={`
+        ${strategy.recommendation === 'SP' ? strategy.styles : ''}
+   ${isCurrentTurnHand ? 'bg-purple-600 hover:bg-purple-700' : 'disabled'}
+    text-white font-bold py-2 px-4 rounded disabled:hover:pointer-events-none
+
+    `}
+        >
+          Split
+        </button>
+      )}
       <button
         disabled={!isCurrentTurnHand}
         onClick={stand}

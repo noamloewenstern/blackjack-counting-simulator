@@ -119,8 +119,6 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               },
               on: {
                 HIT: {
-                  // target: 'waitForPlayerAction',
-                  // reenter: true,
                   guard: 'canHit',
                   actions: 'hitPlayerHand',
                 },
@@ -133,9 +131,17 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
                   actions: ['hitPlayerHand', 'doubleBet'],
                 },
                 SPLIT: {
-                  target: 'waitForPlayerAction',
+                  target: 'SplitHand',
                   guard: 'canSplit',
-                  actions: ['splitHandTo2Hands' /* ? 'setPlayerTurn' */],
+                },
+              },
+            },
+            SplitHand: {
+              entry: ['splitHandToTwoHands' /* ? 'setPlayerTurn' */],
+              after: {
+                400: {
+                  actions: 'hitPlayerHand',
+                  target: 'waitForPlayerAction',
                 },
               },
             },
@@ -374,7 +380,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           console.error('No player hand found');
           throw new Error('No player hand found');
         }),
-        splitHandTo2Hands: assign(({ context }) => {
+        splitHandToTwoHands: assign(({ context }) => {
           const { playerIdx, player, hand, handIdx } = getCurrentTurnHand(context);
           if (hand.cards.length !== 2) throw new Error('Cannot split hand with more than 2 cards');
           const [card1, card2] = hand.cards as [Card, Card];
