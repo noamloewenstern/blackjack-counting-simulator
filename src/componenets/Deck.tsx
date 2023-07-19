@@ -3,9 +3,8 @@ import { useRunningCount } from '../stores/countStore';
 import { useGameMachine } from '~/lib/machines/gameMachineContext';
 
 const Deck = () => {
-  const { state, send, isRoundFinished } = useGameMachine();
+  const { state, send, isRoundFinished, isWaitingForBets } = useGameMachine();
   const isOnInitGame = state.matches('initial');
-  const isWaitingForPlayersBets = state.matches('placePlayerBets');
 
   const handleStartGame = async () => {
     send({ type: 'START_GAME' });
@@ -33,7 +32,7 @@ const Deck = () => {
           {isRoundFinished && <EndGameMessage onDealAgain={handleDealAnotherRound}></EndGameMessage>}
         </div>
       </div>
-      {isWaitingForPlayersBets && (
+      {isWaitingForBets && (
         <h2 className={`bg-orange-800 fixed text-white font-bold py-2 px-4 rounded top-1/4`}>Setup Bets!</h2>
       )}
     </>
