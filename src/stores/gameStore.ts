@@ -1,12 +1,11 @@
 import { useSettingsStore } from './settingsStore';
-import { useCountStore } from './countStore';
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { useRunningCount } from './countStore';
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import { mountStoreDevtool } from 'simple-zustand-devtools';
 import { useDeckStore } from './deckStore';
-import { Card, Hand } from '../lib/deck';
-import { calculateHand, getCardValues, isBlackJack } from '../lib/calculateHand';
+import type { Card, Hand } from '../lib/deck';
+import { calculateHand, getCardValues, isBlackjack } from '../lib/calculateHand';
 import { sleep } from '../utils/helpers';
 import { BlackjackStrategy } from '../lib/strategies/utils';
 
@@ -15,7 +14,7 @@ export type PlayerId = 10 | 20 | 30;
 
 export type IPlayer = {
   id: PlayerId;
-  hand: Hand;
+  hand: Card[];
   bet: number;
   balance: number;
   strategy: BlackjackStrategy;
@@ -53,7 +52,7 @@ const initPlayers: IPlayer[] = [
   },
 ];
 type IDealer = {
-  hand: Hand;
+  hand: Card[];
   finalCount: number;
 };
 type GameStore = {
@@ -170,7 +169,7 @@ export const useGameStore = create(
         await get().dealToDealer();
         return;
       }
-      if (isBlackJack(get().currentPlayer().hand)) {
+      if (isBlackjack(get().currentPlayer().hand)) {
         await get().nextTurn();
       }
     },
@@ -182,7 +181,7 @@ export const useGameStore = create(
     },
     dealToDealer: async () => {
       const { drawCard } = useDeckStore.getState();
-      const { updateCount } = useCountStore.getState();
+      const { updateCount } = useRunningCount.getState();
       set(state => {
         state.dealer.hand.forEach(card => {
           if (!card.isVisible) {
@@ -239,8 +238,8 @@ export const useGameStore = create(
       const playerCount = player.finalCount;
       if (!playerCount) throw new Error(`Player ${playerId} does not have a final count`);
 
-      const dealerHasBlackjack = isBlackJack(get().dealer.hand);
-      const playerHasBlackjack = isBlackJack(player.hand);
+      const dealerHasBlackjack = isBlackjack(get().dealer.hand);
+      const playerHasBlackjack = isBlackjack(player.hand);
 
       if (playerCount > 21 || (dealerCount <= 21 && playerCount < dealerCount)) {
         return 'lose';
@@ -312,7 +311,7 @@ export const useGameStore = create(
           state.dealer.hand.push(card);
         });
       }
-      if (isBlackJack(get().dealer.hand)) {
+      if (isBlackjack(get().dealer.hand)) {
         await sleep(300);
         await get().runDealerHasBlackjackFlow();
         return;
