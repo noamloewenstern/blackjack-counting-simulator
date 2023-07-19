@@ -6,13 +6,19 @@ export function useDealerCount() {
   const { state } = useGameMachine();
   const dealer = state.context.dealer;
   const dealerCards = dealer.hand.cards;
+  const dealerHasCards = dealerCards.length > 0;
 
   const allPlayersFinishedRound = useMemo(
     () => state.context.players.every(player => player.hands.every(hand => hand.isFinished)),
     [state.context.players],
   );
-  const { validCounts, bustCount } = useMemo(() => calculateHand(dealerCards), [dealerCards]);
+  const { validCounts, bustCount } = useMemo(() => {
+    if (!dealerHasCards) return { validCounts: [], bustCount: 0 };
+    return calculateHand(dealerCards);
+  }, [dealerCards, dealerHasCards]);
+
   const { validCounts: visibleValidCounts, bustCount: VisibleBustCount } = useMemo(() => {
+    if (!dealerHasCards) return { validCounts: [], bustCount: 0 };
     if (allPlayersFinishedRound) {
       return {
         validCounts,
@@ -20,7 +26,7 @@ export function useDealerCount() {
       };
     }
     return calculateHand(dealerCards.slice(1));
-  }, [allPlayersFinishedRound, dealerCards, validCounts, bustCount]);
+  }, [dealerHasCards, allPlayersFinishedRound, dealerCards, validCounts, bustCount]);
   const includeNonVisible = {
     finalCount: validCounts[0] ?? bustCount,
     validCounts,
