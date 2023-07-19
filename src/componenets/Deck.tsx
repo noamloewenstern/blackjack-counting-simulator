@@ -1,5 +1,5 @@
 import { useDeckStore } from '../stores/deckStore';
-import { useCountStore } from '../stores/countStore';
+import { useRunningCount } from '../stores/countStore';
 import { useGameMachine } from '~/lib/machines/gameMachineContext';
 
 const Deck = () => {
@@ -49,7 +49,7 @@ const Deck = () => {
 };
 function RunningCount() {
   const deck = useDeckStore(state => state.deck);
-  const [runningCount, getAbsoluteCount] = useCountStore(state => [state.runningCount, state.getAbsoluteCount]);
+  const [runningCount, getAbsoluteCount] = useRunningCount(state => [state.runningCount, state.getAbsoluteCount]);
 
   return (
     <>
