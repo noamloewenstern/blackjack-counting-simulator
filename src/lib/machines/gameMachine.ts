@@ -1,4 +1,4 @@
-import { assign, createMachine, fromCallback, fromPromise, log, pure, raise } from 'xstate';
+import { assign, choose, createMachine, fromCallback, fromPromise, log, pure, raise } from 'xstate';
 import { BlackjackStrategy } from '../strategies/utils';
 // import { inspect } from '@xstate/inspect';
 import { raiseError, sleep } from '~/utils/helpers';
@@ -32,7 +32,8 @@ type GameSettings = {
 };
 export function getCurrentTurnHand({ players, playerHandTurn }: Pick<Context, 'players' | 'playerHandTurn'>) {
   if (!playerHandTurn) raiseError('No player hand turn');
-  const [playerIdx, handIdx] = playerHandTurn.split('.').map(Number).filter(Number.isInteger) as [number, number];
+  const [playerIdx, handIdx] = playerHandTurn.split('.').map(Number).filter(Number.isInteger);
+  if (playerIdx === undefined || handIdx === undefined) raiseError(`Wrong player hand turn: ${playerHandTurn}`);
   const player = players[playerIdx]!;
   const hand = player.hands[handIdx]!;
   return { player, hand, playerIdx, handIdx };
@@ -120,14 +121,18 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           initial: 'waitForPlayerAction',
           states: {
             waitForPlayerAction: {
-              always: {
-                guard: 'isHand21OrMore',
-                target: 'finishedPlayerAction',
-              },
               on: {
                 HIT: {
                   guard: 'canHit',
-                  actions: 'hitPlayerHand',
+                  actions: [
+                    'hitPlayerHand',
+                    choose([
+                      {
+                        guard: 'isHand21OrMore',
+                        actions: raise<Context, { type: 'STAND' }>({ type: 'STAND' }),
+                      },
+                    ]),
+                  ],
                 },
                 STAND: {
                   target: 'finishedPlayerAction',
@@ -189,22 +194,16 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             }),
             input: ({ context }: { context: Context }) => context.dealer.hand.cards[0]!,
           },
-          always: [
-            {
-              target: 'finalizeRound',
-              guard: 'dealerHasFinalHand',
-            },
-            {
-              // actions: raise({ type: 'HIT_DEALER' }),
-            },
-          ],
-          on: {
-            HIT_DEALER: {
-              actions: ['hitDealerHand', 'sendEventIfFinishedDealerTurn'],
-            },
-            FINISHED_DEALER_TURN: {
-              target: 'finalizeRound',
-            },
+          after: {
+            400: [
+              {
+                target: 'finalizeRound',
+                guard: 'dealerHasFinalHand',
+              },
+              {
+                actions: 'hitDealerHand',
+              },
+            ],
           },
         },
         finalizeRound: {
@@ -257,7 +256,6 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               };
             }
           | { type: 'HIT_DEALER' }
-          | { type: 'FINISHED_DEALER_TURN' }
           | { type: 'DEAL_ANOTHER_ROUND' }
           | { type: 'CLEAR_TABLE_ROUND' };
       },
@@ -417,13 +415,6 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             },
           }),
         }),
-        sendEventIfFinishedDealerTurn: pure(({ context }) => {
-          // todo: test if dealer has finished turn
-          const dealerHasFinalHand = true;
-          if (dealerHasFinalHand) {
-            return raise({ type: 'FINISHED_DEALER_TURN' });
-          }
-        }),
       },
       actors: {
         DealHandsToPlayersAndDealer: fromCallback(async (sendBack, _, { input }) => {
@@ -440,12 +431,12 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               });
             }
           };
-          const dealToDealer = async ({ visible = true } = {}) => {
+          const dealToDealer = async () => {
             await sleep(500);
             sendBack({ type: 'HIT_DEALER' });
           };
           await dealToPlayers();
-          await dealToDealer({ visible: false });
+          await dealToDealer();
           await dealToPlayers();
           await dealToDealer();
           await sleep(400);
@@ -466,19 +457,27 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
 
           return hand.cards.length > 0 && (calculateHand(hand.cards).validCounts[0] || 22) >= 21;
         },
-        dealerHasFinalHand: ({ context, event }) => {
+        dealerHasFinalHand: ({ context }) => {
           const { dealerMustHitOnSoft17 } = gameSettings;
 
           const { hand } = context.dealer;
           const validCounts = calculateHand(hand.cards).validCounts;
-          return (
+          const hasOverSoft17 =
             validCounts.length === 0 ||
             validCounts[0]! > 17 ||
             /* soft 17 */
             (validCounts[0] === 17 &&
               (!validCounts[1] /* means the count is total, not soft */ ||
-                !dealerMustHitOnSoft17)) /* doesn't have to hit on soft 17 */
-          );
+                !dealerMustHitOnSoft17)); /* doesn't have to hit on soft 17 */
+          if (hasOverSoft17) return true;
+          const allPlayersBust = context.players.every(player => {
+            return player.hands.every(hand => {
+              const validCounts = calculateHand(hand.cards).validCounts;
+              return validCounts.length === 0 || validCounts[0]! > 21;
+            });
+          });
+          if (allPlayersBust) return true;
+          return false;
         },
         allPlayersGot2Cards: ({ context }) => {
           return context.players.every(player => player.hands.every(hand => hand.cards.length === 2));
