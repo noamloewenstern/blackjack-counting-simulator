@@ -12,10 +12,9 @@ const useAutomateBetForCountingBots = ({ isReady, setIsReady }: { isReady: boole
   const { player } = usePlayerHand();
   const runningCount = useRunningCount(state => state.runningCount);
   const numberDecksInShoe = useSettingsStore(state => state.numberDecksInShoe);
-
   const ranUseEffect = useRef(false);
   useEffect(() => {
-    if (player.strategy !== 'interactive' || isReady) return;
+    if (player.strategy === 'interactive' || isReady) return;
     if (!ranUseEffect.current) {
       ranUseEffect.current = true;
       const placeBet = (bet: number) => {
@@ -39,10 +38,18 @@ const useAutomateBetForCountingBots = ({ isReady, setIsReady }: { isReady: boole
           throw new Error(`Invalid strategy ${player.strategy}`);
         }
         placeBet(bet);
-        setIsReady();
       }, 500);
     }
-  }, [isReady, numberDecksInShoe, player.id, player.strategy, runningCount, send, setIsReady]);
+  }, [isReady, numberDecksInShoe, player.id, player.strategy, runningCount, send]);
+
+  const bet = player.hands[0]!.bet;
+
+  useEffect(() => {
+    if (player.strategy === 'interactive') return;
+    if (!isReady && bet > 0) {
+      setIsReady();
+    }
+  }, [bet, isReady, player.strategy, setIsReady]);
 };
 
 export default function BetControls() {
@@ -60,8 +67,10 @@ export default function BetControls() {
     });
   };
   const disableReady = hand.bet === 0;
-
-  useAutomateBetForCountingBots({ isReady: hand.isReady, setIsReady: handleReady });
+  if (player.strategy !== 'interactive') {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useAutomateBetForCountingBots({ isReady: hand.isReady, setIsReady: handleReady });
+  }
 
   if (hand.isReady) return <h3>Ready</h3>;
 
