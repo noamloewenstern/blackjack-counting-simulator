@@ -16,7 +16,7 @@ export type Hand = {
   bet: number;
   isFinished: boolean;
   isReady: boolean;
-  roundResult: RoundHandResult;
+  roundResult?: RoundHandResult;
 };
 
 export function shuffleDeck(deck: Card[]): Card[] {

@@ -3,6 +3,7 @@ export function sleep(ms: number) {
 }
 
 export function raiseError(message: string): never {
+  console.error(message);
   throw new Error(message);
 }
 

@@ -25,7 +25,7 @@ export default function HandCard() {
     <>
       {counts.length > 0 && (
         <h3 className='text-lg ml-2'>
-          Count:{' '}
+          {`Count: `}
           <span className={`text-xl font-bold ${didBust ? 'text-red-700' : 'text-green-600'}`}>
             {didBust ? `${finalCount} BUST` : counts.join(' | ')}
             {isRoundFinished && <EndGameMessage hand={hand} />}

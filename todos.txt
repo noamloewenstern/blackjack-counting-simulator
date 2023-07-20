@@ -1,0 +1,6 @@
+- shuffle after cards are less than 5*number of players+dealer
+- show count while dealing, not just after full init deal
+- if final hand - show only the final count, no soft
+- flow if dealer has blackjack + player blackjack
+- flow of split + include with blackjack
+- calculate end of round

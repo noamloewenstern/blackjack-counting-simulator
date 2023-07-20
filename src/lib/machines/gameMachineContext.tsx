@@ -86,6 +86,10 @@ function useGameMachineContext() {
     devTools: true,
     logger: msg => console.log(msg),
   });
+  const sendWithLog = (event: Parameters<typeof send>[0]) => {
+    console.log('send', event);
+    send(event);
+  };
 
   useEffect(() => {
     const parsed = typeof state.value === 'object' ? JSON.stringify(state.value) : state.value;
@@ -111,7 +115,7 @@ function useGameMachineContext() {
   const context = {
     state,
     context: state.context,
-    send,
+    send: sendWithLog,
     service,
     allPlayersSetBets,
     isRoundFinished,
