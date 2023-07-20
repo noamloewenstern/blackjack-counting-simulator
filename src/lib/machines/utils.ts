@@ -47,3 +47,13 @@ export function calcHandRoundResult({
   }
   return 'win';
 }
+
+export function dealerHasFinalHand(validHandCounts: number[], { dealerMustHitOnSoft17 = true }) {
+  return (
+    validHandCounts.length === 0 ||
+    validHandCounts[0]! > 17 ||
+    /* soft 17 */
+    (validHandCounts[0] === 17 &&
+      (!validHandCounts[1] /* means the count is total, not soft */ || !dealerMustHitOnSoft17))
+  ); /* doesn't have to hit on soft 17 */
+}

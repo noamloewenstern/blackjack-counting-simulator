@@ -19,19 +19,21 @@ function DealerHand() {
   );
 }
 function DealerCount() {
-  const { visible: visibleCount } = useDealerCount();
+  const { visible: dealerCount } = useDealerCount();
+  const dealerHasCards = dealerCount.dealerCards.length > 0;
+  if (!dealerHasCards) return null;
+
+  const validCountToShow = dealerCount.isFinalHand ? dealerCount.finalCount : dealerCount.validCounts.join(' | ');
 
   return (
-    !!visibleCount.finalCount && (
-      <h3 className='text-lg ml-2 font-bold'>
-        Count:{` `}
-        {visibleCount.didBust ? (
-          <span className={'text-xl font-bold text-red-700'}>{visibleCount.bustCount}</span>
-        ) : (
-          <span className={'text-xl font-bold text-green-600'}> {visibleCount.validCounts.join(' | ')}</span>
-        )}
-      </h3>
-    )
+    <h3 className='text-lg ml-2 font-bold'>
+      Count:{` `}
+      {dealerCount.didBust ? (
+        <span className={'text-xl font-bold text-red-700'}>{dealerCount.bustCount}</span>
+      ) : (
+        <span className={'text-xl font-bold text-green-600'}> {validCountToShow}</span>
+      )}
+    </h3>
   );
 }
 function DealerCards() {

@@ -5,6 +5,8 @@ type DeckStore = {
   numberDecksInShoe: number;
   dealerMustHitOnSoft17: boolean;
   allowedToDoubleAfterSplit: boolean;
+
+  automateInteractivePlayer: boolean;
 };
 type Actions = {
   setNumberOfDecks: (numberOfDecks: number) => void;
@@ -16,5 +18,7 @@ export const useSettingsStore = create(
     dealerMustHitOnSoft17: true,
     allowedToDoubleAfterSplit: true,
     setNumberOfDecks: (numberOfDecks: number) => set({ numberDecksInShoe: numberOfDecks }),
+
+    automateInteractivePlayer: true,
   })),
 );
