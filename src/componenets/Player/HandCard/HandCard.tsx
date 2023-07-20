@@ -21,7 +21,7 @@ export default function HandCard() {
   }, [didBust, isBlackjack, isCurrentTurnHand, send]);
   const countMsg = didBust ? `${finalCount} BUST` : hand.isFinished ? finalCount : counts.join(' | ');
   return (
-    <>
+    <div>
       {counts.length > 0 && (
         <h3 className='text-lg ml-2'>
           {`Count: `}
@@ -31,9 +31,7 @@ export default function HandCard() {
           </span>
         </h3>
       )}
-      <div className='flex justify-between'>
-        <span className='px-2'>Bet: {hand.bet}</span>
-      </div>
+      <span className='px-2'>Bet: {hand.bet}</span>
       <div className='hand flex justify-center gap-2 my-4'>
         {hand.cards.map((card, index) => (
           <Card card={card} key={index} />
@@ -41,6 +39,6 @@ export default function HandCard() {
       </div>
       {isWaitingForBets && <BetControls />}
       {isPlayersTurn && !hand.isFinished && !didBust && <ActionControls />}
-    </>
+    </div>
   );
 }
