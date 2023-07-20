@@ -7,9 +7,8 @@ import EndGameMessage from './EndGameMessage';
 import Card from '~/componenets/Card';
 
 export default function HandCard() {
-  const { hand } = usePlayerHand();
   const { send, isRoundFinished, isWaitingForBets, isPlayersTurn } = useGameMachine();
-  const { isCurrentTurnHand, isBlackjack, didBust, counts, finalCount } = usePlayerHand();
+  const { isCurrentTurnHand, isBlackjack, didBust, counts, finalCount, hand } = usePlayerHand();
 
   useEffect(() => {
     if (isCurrentTurnHand && isBlackjack) {
@@ -20,14 +19,14 @@ export default function HandCard() {
       send({ type: 'STAND' });
     }
   }, [didBust, isBlackjack, isCurrentTurnHand, send]);
-
+  const countMsg = didBust ? `${finalCount} BUST` : hand.isFinished ? finalCount : counts.join(' | ');
   return (
     <>
       {counts.length > 0 && (
         <h3 className='text-lg ml-2'>
           {`Count: `}
           <span className={`text-xl font-bold ${didBust ? 'text-red-700' : 'text-green-600'}`}>
-            {didBust ? `${finalCount} BUST` : counts.join(' | ')}
+            {countMsg}
             {isRoundFinished && <EndGameMessage hand={hand} />}
           </span>
         </h3>
