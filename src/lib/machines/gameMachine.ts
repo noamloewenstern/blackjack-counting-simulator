@@ -1,11 +1,9 @@
 import { assign, choose, createMachine, fromCallback, fromPromise, raise } from 'xstate';
 import { BlackjackStrategy } from '../strategies/utils';
-// import { inspect } from '@xstate/inspect';
 import { raiseError, sleep } from '~/utils/helpers';
 import type { Card, Hand, RoundHandResult } from '../deck';
 import { calcHandCount, isBlackjack } from '../calculateHand';
 import { calcHandInfo, calcHandRoundResult } from './utils';
-// inspect();
 
 export type Player = {
   id: string;
@@ -67,7 +65,6 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           on: {
             START_GAME: {
               target: 'placePlayerBets',
-              // actions: ['shuffleDeck', 'initContext'],
               actions: ['shuffleDeck'],
             },
           },
@@ -162,7 +159,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             finishedPlayerAction: {
               entry: 'setHandAsFinished',
               after: {
-                0: [
+                50: [
                   {
                     guard: 'isLastPlayedHand',
                     target: 'noMorePlayerActions',
@@ -193,23 +190,32 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               {
                 target: 'finalizeRound',
                 guard: 'dealerHasFinalHand',
+                actions: assign({
+                  dealer: ({ context }) => ({
+                    ...context.dealer,
+                    hand: {
+                      ...context.dealer.hand,
+                      isFinished: true,
+                    },
+                  }),
+                }),
               },
               {
                 actions: ['hitDealerHand'],
+                target: 'dealerTurn',
                 reenter: true,
               },
             ],
           },
         },
         finalizeRound: {
-          // todo: implement these actions
           entry: ['setPlayersRoundResult', 'finalizePlayersBalance'],
           on: {
             CLEAR_TABLE_ROUND: {
-              actions: ['clearTableCards', 'clearPlayersBets'],
+              actions: ['clearForNewRound'],
             },
             DEAL_ANOTHER_ROUND: {
-              actions: ['clearTableCards', 'clearPlayersBets'],
+              actions: ['clearForNewRound'],
               target: 'placePlayerBets',
             },
           },
@@ -404,10 +410,12 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               hands: player.hands
                 .with(handIdx, {
                   ...hand,
+                  id: `${hand.id}-0`,
                   cards: [card1],
                 })
                 .concat({
                   ...hand,
+                  id: `${hand.id}-1`,
                   cards: [card2],
                 }),
             }),
@@ -446,6 +454,37 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             },
           }),
         }),
+        clearForNewRound: assign({
+          players: ({ context }) =>
+            context.players.map((player, idx) => ({
+              ...player,
+              hands: [
+                {
+                  id: `Player-${idx}-Hand-0`,
+                  cards: [],
+                  bet: 0,
+                  isReady: false,
+                  isFinished: false,
+                  roundResult: undefined,
+                },
+              ],
+            })),
+          dealer: ({ context }) => ({
+            ...context.dealer,
+            hand: {
+              id: context.dealer.hand.id,
+              cards: [],
+              bet: 0,
+              isReady: false,
+              isFinished: false,
+              roundResult: undefined,
+            },
+          }),
+          playerHandTurn: undefined,
+        }),
+        clearPlayersBets: ({ context }) => {
+          return context.players.every(player => player.hands.every(hand => hand.bet > 0 && hand.isReady));
+        },
       },
       actors: {
         DealHandsToPlayersAndDealer: fromCallback(async (sendBack, _, { input }) => {
@@ -493,6 +532,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
 
           const { hand } = context.dealer;
           const validCounts = calcHandCount(hand.cards).validCounts;
+
           const hasOverSoft17 =
             validCounts.length === 0 ||
             validCounts[0]! > 17 ||
@@ -500,6 +540,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             (validCounts[0] === 17 &&
               (!validCounts[1] /* means the count is total, not soft */ ||
                 !dealerMustHitOnSoft17)); /* doesn't have to hit on soft 17 */
+
           if (hasOverSoft17) return true;
           const allPlayersBust = context.players.every(player => {
             return player.hands.every(hand => {
