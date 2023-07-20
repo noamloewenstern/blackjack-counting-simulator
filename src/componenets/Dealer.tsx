@@ -20,9 +20,9 @@ function DealerHand() {
 }
 function DealerCount() {
   const { visible: visibleCount } = useDealerCount();
-  visibleCount.validCounts;
+
   return (
-    visibleCount.finalCount && (
+    !!visibleCount.finalCount && (
       <h3 className='text-lg ml-2 font-bold'>
         Count:{` `}
         {visibleCount.didBust ? (
