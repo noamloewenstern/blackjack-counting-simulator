@@ -1,4 +1,4 @@
-import { assign, choose, createMachine, fromCallback, fromPromise, log, pure, raise } from 'xstate';
+import { assign, choose, createMachine, fromCallback, fromPromise, raise } from 'xstate';
 import { BlackjackStrategy } from '../strategies/utils';
 // import { inspect } from '@xstate/inspect';
 import { raiseError, sleep } from '~/utils/helpers';
@@ -118,10 +118,11 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           },
         },
         playersTurn: {
-          entry: ['setBlackjackHandsAsFinished', 'setPlayerTurn'],
+          entry: ['setBlackjackHandsAsFinished'],
           initial: 'waitForPlayerAction',
           states: {
             waitForPlayerAction: {
+              entry: 'setPlayerTurn',
               on: {
                 HIT: {
                   guard: 'canHit',
@@ -135,13 +136,13 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
                     ]),
                   ],
                 },
-                STAND: {
-                  target: 'finishedPlayerAction',
-                },
                 DOUBLE: {
                   guard: 'canDouble',
                   target: 'finishedPlayerAction',
                   actions: ['hitPlayerHand', 'doubleBet'],
+                },
+                STAND: {
+                  target: 'finishedPlayerAction',
                 },
                 SPLIT: {
                   target: 'SplitHand',
@@ -160,17 +161,17 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             },
             finishedPlayerAction: {
               entry: 'setHandAsFinished',
-              always: [
-                {
-                  guard: 'isNotLastPlayedHand',
-                  target: 'waitForPlayerAction',
-                  actions: 'setPlayerTurn',
-                },
-                {
-                  guard: 'isLastPlayedHand',
-                  target: 'noMorePlayerActions',
-                },
-              ],
+              after: {
+                0: [
+                  {
+                    guard: 'isLastPlayedHand',
+                    target: 'noMorePlayerActions',
+                  },
+                  {
+                    target: 'waitForPlayerAction',
+                  },
+                ],
+              },
             },
             noMorePlayerActions: {
               type: 'final',
