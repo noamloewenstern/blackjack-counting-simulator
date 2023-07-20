@@ -9,7 +9,7 @@ export const HandContext = createContext<IHandContextState>({} as never);
 function useGetCalculateHandContext({ hand }: ProviderProps) {
   const { player, currentTurnInfo, isCurrentTurn } = usePlayer();
   const { counts, finalCount, didBust, isBlackjack } = useMemo(() => {
-    return currentTurnInfo
+    return hand.cards.length > 0
       ? calcHandInfo(hand.cards)
       : {
           counts: [0],
@@ -17,7 +17,7 @@ function useGetCalculateHandContext({ hand }: ProviderProps) {
           didBust: false,
           isBlackjack: false,
         };
-  }, [currentTurnInfo, hand.cards]);
+  }, [hand.cards]);
 
   const isCurrentTurnHand = currentTurnInfo?.hand.id === hand.id;
 
