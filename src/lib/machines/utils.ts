@@ -22,7 +22,7 @@ export function calcHandInfo(cards: Card[]) {
     isBlackjack,
   };
 }
-export function calcualtePlayerRoundResult({
+export function calcHandRoundResult({
   dealerHandInfo,
   playerHandInfo,
 }: {
