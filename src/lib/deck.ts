@@ -3,7 +3,7 @@ export const suits = ['♠', '♥', '♦', '♣'] as const;
 
 export type CardValue = (typeof cardNumbers)[number];
 type CardSuit = (typeof suits)[number];
-
+export type RoundHandResult = 'win' | 'lose' | 'push' | 'blackjack' | 'bust';
 export type Card = {
   value: CardValue;
   suit: CardSuit;
@@ -16,6 +16,7 @@ export type Hand = {
   bet: number;
   isFinished: boolean;
   isReady: boolean;
+  roundResult: RoundHandResult;
 };
 
 export function shuffleDeck(deck: Card[]): Card[] {

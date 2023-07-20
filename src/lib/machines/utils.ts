@@ -1,5 +1,5 @@
 import { calculateHand } from '../calculateHand';
-import type { Card } from '../deck';
+import type { Card, RoundHandResult } from '../deck';
 
 export function isHandBlackjack(cards: Card[]) {
   if (cards.length !== 2) return false;
@@ -22,7 +22,13 @@ export function calcHandInfo(cards: Card[]) {
     isBlackjack,
   };
 }
-export function calcualtePlayerRoundResult({ dealerCards, playerCards }: { dealerCards: Card[]; playerCards: Card[] }) {
+export function calcualtePlayerRoundResult({
+  dealerCards,
+  playerCards,
+}: {
+  dealerCards: Card[];
+  playerCards: Card[];
+}): RoundHandResult {
   const dealerHandInfo = calcHandInfo(dealerCards);
   const playerHandInfo = calcHandInfo(playerCards);
 
