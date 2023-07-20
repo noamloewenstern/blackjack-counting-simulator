@@ -29,10 +29,11 @@ export function shuffleDeck(deck: Card[]): Card[] {
 }
 
 export const createDeck = () => {
+  const cardNumbersWithoutDuplicateTens = cardNumbers.filter(cardNumber => cardNumber !== '10');
   const newDeck = [] as Card[];
   for (let i = 0; i < suits.length; i++) {
-    for (let j = 0; j < cardNumbers.length; j++) {
-      newDeck.push({ value: cardNumbers[j]!, suit: suits[i]!, isVisible: true });
+    for (let j = 0; j < cardNumbersWithoutDuplicateTens.length; j++) {
+      newDeck.push({ value: cardNumbersWithoutDuplicateTens[j]!, suit: suits[i]!, isVisible: true });
     }
   }
   return newDeck;
