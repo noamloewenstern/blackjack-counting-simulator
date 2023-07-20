@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { calculateHand } from '~/lib/calculateHand';
+import { calcHandCount } from '~/lib/calculateHand';
 import { useGameMachine } from '~/lib/machines/gameMachineContext';
 
 export function useDealerCount() {
@@ -14,7 +14,7 @@ export function useDealerCount() {
   );
   const { validCounts, bustCount } = useMemo(() => {
     if (!dealerHasCards) return { validCounts: [], bustCount: 0 };
-    return calculateHand(dealerCards);
+    return calcHandCount(dealerCards);
   }, [dealerCards, dealerHasCards]);
 
   const { validCounts: visibleValidCounts, bustCount: VisibleBustCount } = useMemo(() => {
@@ -25,7 +25,7 @@ export function useDealerCount() {
       };
     }
     if (!dealerHasCards || dealerCards.length === 1) return { validCounts: [], bustCount: 0 };
-    return calculateHand(dealerCards.slice(1));
+    return calcHandCount(dealerCards.slice(1));
   }, [dealerHasCards, allPlayersFinishedRound, dealerCards, validCounts, bustCount]);
   const includeNonVisible = {
     finalCount: validCounts[0] ?? bustCount,

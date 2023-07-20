@@ -1,14 +1,14 @@
-import { calculateHand } from '../calculateHand';
+import { calcHandCount } from '../calculateHand';
 import type { Card, RoundHandResult } from '../deck';
 
 export function isHandBlackjack(cards: Card[]) {
   if (cards.length !== 2) return false;
-  const { validCounts } = calculateHand(cards);
+  const { validCounts } = calcHandCount(cards);
   return validCounts[0] === 21;
 }
 
 export function calcHandInfo(cards: Card[]) {
-  const { validCounts, bustCount } = calculateHand(cards);
+  const { validCounts, bustCount } = calcHandCount(cards);
 
   const counts = validCounts.length > 0 ? validCounts : [bustCount];
 
@@ -23,15 +23,12 @@ export function calcHandInfo(cards: Card[]) {
   };
 }
 export function calcualtePlayerRoundResult({
-  dealerCards,
-  playerCards,
+  dealerHandInfo,
+  playerHandInfo,
 }: {
-  dealerCards: Card[];
-  playerCards: Card[];
+  dealerHandInfo: ReturnType<typeof calcHandInfo>;
+  playerHandInfo: ReturnType<typeof calcHandInfo>;
 }): RoundHandResult {
-  const dealerHandInfo = calcHandInfo(dealerCards);
-  const playerHandInfo = calcHandInfo(playerCards);
-
   if (playerHandInfo.finalCount > 21) {
     return 'bust';
   }

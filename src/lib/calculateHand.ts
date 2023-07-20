@@ -34,8 +34,8 @@ function handToNumberHand(hand: Card[] | Card['value'][]) {
   }
   return hand;
 }
-const calculateHandCache = new LRUCache<string, ReturnType<typeof calculateHand>>({ max: 2000 });
-export function calculateHand(cards: Card[] | Card['value'][]): {
+const calculateHandCache = new LRUCache<string, ReturnType<typeof calcHandCount>>({ max: 2000 });
+export function calcHandCount(cards: Card[] | Card['value'][]): {
   validCounts: number[];
   bustCount: number;
 } {
@@ -87,12 +87,12 @@ export function isBlackjack(hand: Card[] | Card['value'][]) {
     return false;
   }
   hand = handToNumberHand(hand);
-  const { validCounts } = calculateHand(hand);
+  const { validCounts } = calcHandCount(hand);
   return validCounts[0] === 21;
 }
 
 export function useHasBlackjack(hand: Card[]) {
   return useMemo(() => {
-    return hand.length === 2 && calculateHand(hand).validCounts[0] === 21;
+    return hand.length === 2 && calcHandCount(hand).validCounts[0] === 21;
   }, [hand]);
 }

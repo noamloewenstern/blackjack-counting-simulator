@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer';
 import { mountStoreDevtool } from 'simple-zustand-devtools';
 import { useDeckStore } from './deckStore';
 import type { Card, Hand } from '../lib/deck';
-import { calculateHand, getCardValues, isBlackjack } from '../lib/calculateHand';
+import { calcHandCount, getCardValues, isBlackjack } from '../lib/calculateHand';
 import { sleep } from '../utils/helpers';
 import { BlackjackStrategy } from '../lib/strategies/utils';
 
@@ -113,7 +113,7 @@ export const useGameStore = create(
         player.hand.push(card);
       });
       const player = getPlayerById(get(), playerId);
-      const validCounts = calculateHand(player.hand).validCounts;
+      const validCounts = calcHandCount(player.hand).validCounts;
       if (validCounts.length === 0) {
         await get().stand(playerId);
       }
@@ -137,7 +137,7 @@ export const useGameStore = create(
     setStandInfo: (playerId: PlayerId) => {
       set(state => {
         const player = getPlayerById(state, playerId);
-        const counts = calculateHand(player.hand);
+        const counts = calcHandCount(player.hand);
         const finalCount = counts.validCounts[0] || counts.bustCount;
         player.finished = true;
         player.finalCount = finalCount;
@@ -175,7 +175,7 @@ export const useGameStore = create(
     },
     visibleDealerCount: () => {
       if (get().dealer.hand.filter(card => card.isVisible).length === 0) return;
-      const { validCounts, bustCount } = calculateHand(get().dealer.hand.filter(card => card.isVisible));
+      const { validCounts, bustCount } = calcHandCount(get().dealer.hand.filter(card => card.isVisible));
       if (validCounts.length === 0) return bustCount;
       return validCounts.length > 1 ? validCounts : validCounts[0];
     },
@@ -193,12 +193,12 @@ export const useGameStore = create(
 
       // Deal cards to the dealer until their hand is 17 or higher.
       await sleep(500);
-      let counts: ReturnType<typeof calculateHand>;
+      let counts: ReturnType<typeof calcHandCount>;
       const { dealerMustHitOnSoft17 } = useSettingsStore.getState();
       // eslint-disable-next-line no-constant-condition
       while (true) {
         // let { validCounts } = counts;
-        counts = calculateHand(get().dealer.hand);
+        counts = calcHandCount(get().dealer.hand);
         const { validCounts } = counts;
         if (
           validCounts.length === 0 ||

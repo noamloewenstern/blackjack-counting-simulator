@@ -1,5 +1,5 @@
 import { raiseError } from '~/utils/helpers';
-import { calculateHand, isBlackjack } from '../calculateHand';
+import { calcHandCount, isBlackjack } from '../calculateHand';
 import type { Card } from '../deck';
 
 type PairSplitAction = 'Y' | 'Y/N' | 'N'; // Y: Split, Y/N: Split if allowed to double after split otherwise don't split, N: Don't split
@@ -54,7 +54,7 @@ function getSoftAction(
   dealerCount: number,
   { canDouble }: { canDouble: boolean },
 ): HardTotalAction {
-  const { validCounts } = calculateHand(playerHand);
+  const { validCounts } = calcHandCount(playerHand);
   const playerTotal = validCounts[0] || 0;
   if (!SoftTotalStrategy[playerTotal]?.[dealerCount - 2]) {
     if (playerHand.length > 2) {
@@ -96,7 +96,7 @@ function getHardAction(
   dealerCount: number,
   { canDouble }: { canDouble: boolean },
 ): HardTotalAction {
-  const { validCounts } = calculateHand(playerHand);
+  const { validCounts } = calcHandCount(playerHand);
   const playerTotal = validCounts[0];
   if (!playerTotal) {
     throw new Error(`Invalid playerTotal:${playerTotal} and dealerCount:${dealerCount} for hard hand - IS BUST`);
@@ -135,7 +135,7 @@ export function getActionByStrategy(playerHand: Card[], dealerCount: number, set
     return 'SP';
   }
 
-  const { validCounts } = calculateHand(playerHand);
+  const { validCounts } = calcHandCount(playerHand);
   if (validCounts[0] === 20 || validCounts.length === 0) {
     return 'S';
   }
