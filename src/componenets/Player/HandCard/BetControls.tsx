@@ -24,7 +24,7 @@ const useAutomateBetForCountingBots = ({ isReady, setIsReady }: { isReady: boole
             playerId: player.id,
             handIdx: 0, // init deal
             bet,
-            aggregateBet: false,
+            overrideAction: 'override',
           },
         });
       };
@@ -56,16 +56,28 @@ export default function BetControls() {
   const { send } = useGameMachine();
   const { player } = usePlayer();
   const { hand } = usePlayerHand();
-  const handleReady = () => {
+  function handleReady() {
     if (hand.bet === 0) {
       alert('No Bet Placed');
       return;
     }
     send({
       type: 'PLACE_BET',
-      params: { playerId: player.id, handIdx: 0 /* init deal */, bet: hand.bet, aggregateBet: false, isReady: true },
+      params: {
+        playerId: player.id,
+        handIdx: 0 /* init deal */,
+        bet: hand.bet,
+        overrideAction: 'override',
+        isReady: true,
+      },
     });
-  };
+  }
+  function handleResetBet() {
+    send({
+      type: 'PLACE_BET',
+      params: { playerId: player.id, handIdx: 0 /* init deal */, bet: 0, overrideAction: 'override' },
+    });
+  }
   const disableReady = hand.bet === 0;
   if (player.strategy !== 'interactive') {
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -92,6 +104,14 @@ export default function BetControls() {
         >
           Ready
         </button>
+        <button
+          onClick={handleResetBet}
+          className={`${
+            disableReady ? 'disabled' : ''
+          } bg-yellow-800 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded mb-2`}
+        >
+          Reset
+        </button>
       </>
     </div>
   );
@@ -108,7 +128,7 @@ const BetButton = ({ amount }: { amount: number }) => {
     }
     send({
       type: 'PLACE_BET',
-      params: { playerId: player.id, handIdx: 0 /* init deal */, bet: betAmount, aggregateBet: true },
+      params: { playerId: player.id, handIdx: 0 /* init deal */, bet: betAmount, overrideAction: 'aggregate' },
     });
   };
 
