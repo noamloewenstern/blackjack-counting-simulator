@@ -11,48 +11,44 @@ const useAutomateBetForCountingBots = ({ isReady, setIsReady }: { isReady: boole
   const { send } = useGameMachine();
   const { player } = usePlayerHand();
   const runningCount = useRunningCount(state => state.runningCount);
-  const numberDecksInShoe = useSettingsStore(state => state.numberDecksInShoe);
+  const { numberDecksInShoe, automateInteractivePlayer } = useSettingsStore();
   const alreadyRanEffect = useRef(false);
   useEffect(() => {
-    if (player.strategy === 'interactive' || isReady) return;
-    if (!alreadyRanEffect.current) {
-      alreadyRanEffect.current = true;
-      const placeBet = (bet: number) => {
-        send({
-          type: 'PLACE_BET',
-          params: {
-            playerId: player.id,
-            handIdx: 0, // init deal
-            bet,
-            overrideAction: 'override',
-          },
-        });
-      };
-      setTimeout(async () => {
-        let bet: number;
-        if (player.strategy === 'perfect-blackjack') {
-          bet = calculateBetPerfectBlackjack();
-        } else if (player.strategy === 'counting') {
-          bet = calculateCountingBet({ runningCount, numberDecksInShoe });
-        } else {
-          throw new Error(`Invalid strategy ${player.strategy}`);
-        }
-        placeBet(bet);
-      }, 500);
-    }
-  }, [isReady, numberDecksInShoe, player.id, player.strategy, runningCount, send]);
+    if (alreadyRanEffect.current || (player.strategy === 'interactive' && !automateInteractivePlayer) || isReady)
+      return;
+    alreadyRanEffect.current = true;
+    const placeBet = (bet: number) => {
+      send({
+        type: 'PLACE_BET',
+        params: {
+          playerId: player.id,
+          handIdx: 0, // init deal
+          bet,
+          overrideAction: 'override',
+        },
+      });
+    };
+    const bet = {
+      'perfect-blackjack': () => calculateBetPerfectBlackjack(),
+      counting: () => calculateCountingBet({ runningCount, numberDecksInShoe }),
+      // interactive: () => raiseError(`Invalid strategy ${player.strategy}`),
+      interactive: () => calculateBetPerfectBlackjack(),
+    }[player.strategy]();
+    setTimeout(async () => placeBet(bet), 500);
+  }, [automateInteractivePlayer, isReady, numberDecksInShoe, player.id, player.strategy, runningCount, send]);
 
   const bet = player.hands[0]!.bet;
 
   const alreadyRanEffectSetBet = useRef(false);
   useEffect(() => {
-    if (player.strategy === 'interactive' || isReady || alreadyRanEffectSetBet.current) return;
+    if (alreadyRanEffectSetBet.current || (player.strategy === 'interactive' && !automateInteractivePlayer) || isReady)
+      return;
     if (bet > 0) {
       // previously effect set the bet
       alreadyRanEffectSetBet.current = true;
       setIsReady();
     }
-  }, [bet, isReady, player.strategy, setIsReady]);
+  }, [automateInteractivePlayer, bet, isReady, player.strategy, setIsReady]);
 };
 
 export default function BetControls() {
