@@ -358,7 +358,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               };
               const balance = player.hands.reduce((acc, hand) => {
                 const { roundResult, bet } = hand;
-                return acc + resultMap[roundResult] * bet;
+                return acc + resultMap[roundResult!] * bet;
               }, player.balance);
               return {
                 ...player,
