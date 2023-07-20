@@ -1,26 +1,24 @@
-import { type ReactNode, createContext, useContext, useMemo } from 'react';
-import { calculateHand } from '~/lib/calculateHand';
+import { type ReactNode, createContext, useMemo } from 'react';
 import usePlayer from '../hooks/usePlayer';
 import { type Hand } from '~/lib/deck';
+import { calcHandInfo } from '~/lib/machines/utils';
 
 type IHandContextState = ReturnType<typeof useGetCalculateHandContext>;
 export const HandContext = createContext<IHandContextState>({} as never);
 
 function useGetCalculateHandContext({ hand }: ProviderProps) {
   const { player, currentTurnInfo, isCurrentTurn } = usePlayer();
-  const { validCounts, bustCount } = useMemo(() => {
+  const { counts, finalCount, didBust, isBlackjack } = useMemo(() => {
     return currentTurnInfo
-      ? calculateHand(hand.cards)
+      ? calcHandInfo(hand.cards)
       : {
-          validCounts: [],
-          bustCount: 0,
+          counts: [0],
+          finalCount: 0,
+          didBust: false,
+          isBlackjack: false,
         };
   }, [currentTurnInfo, hand.cards]);
 
-  const counts = validCounts.length > 0 ? validCounts : [bustCount];
-  const finalCount = validCounts[0] ?? bustCount;
-  const didBust = validCounts.length === 0 && bustCount > 21;
-  const isBlackjack = hand.cards.length === 2 && validCounts[0] === 21;
   const isCurrentTurnHand = currentTurnInfo?.hand.id === hand.id;
 
   const handState = {
