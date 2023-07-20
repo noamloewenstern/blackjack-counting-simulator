@@ -108,9 +108,9 @@ function useGameMachineContext() {
     () => state.context.players.every(player => player.hands.every(hand => hand.bet > 0)),
     [state.context.players],
   );
-  const isRoundFinished = state.matches('finalizeRound');
-  const isPlayersTurn = state.matches('playersTurn');
-  const isWaitingForBets = state.matches('placePlayerBets');
+  const isRoundFinished = state.matches('FinalizeRound');
+  const isPlayersTurn = state.matches('PlayersTurn');
+  const isWaitingForBets = state.matches('PlacePlayerBets');
 
   const context = {
     state,

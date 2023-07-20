@@ -4,7 +4,7 @@ import { useGameMachine } from '~/lib/machines/gameMachineContext';
 
 const Deck = () => {
   const { state, send, isRoundFinished, isWaitingForBets } = useGameMachine();
-  const isOnInitGame = state.matches('initial');
+  const isOnInitGame = state.matches('Initial');
 
   const handleStartGame = async () => {
     send({ type: 'START_GAME' });
