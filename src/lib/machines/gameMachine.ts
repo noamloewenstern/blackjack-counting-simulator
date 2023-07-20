@@ -2,8 +2,9 @@ import { assign, choose, createMachine, fromCallback, fromPromise, log, pure, ra
 import { BlackjackStrategy } from '../strategies/utils';
 // import { inspect } from '@xstate/inspect';
 import { raiseError, sleep } from '~/utils/helpers';
-import type { Card, Hand } from '../deck';
-import { calculateHand, isBlackjack } from '../calculateHand';
+import type { Card, Hand, RoundHandResult } from '../deck';
+import { calcHandCount, isBlackjack } from '../calculateHand';
+import { calcHandInfo, calcHandRoundResult } from './utils';
 // inspect();
 
 export type Player = {
@@ -201,7 +202,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         },
         finalizeRound: {
           // todo: implement these actions
-          entry: ['setPlayersRoundOutcome', 'finalizePlayersBalance', 'showRoundOutcome', log('GOT TO: finalizeRound')],
+          entry: ['setPlayersRoundResult', 'finalizePlayersBalance'],
           on: {
             CLEAR_TABLE_ROUND: {
               actions: ['clearTableCards', 'clearPlayersBets'],
@@ -245,7 +246,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
                 playerId: Player['id'];
                 handIdx: HandIdx;
                 bet: number;
-                aggregateBet?: boolean;
+                overrideAction: 'override' | 'aggregate';
                 isReady?: boolean;
               };
             }
@@ -330,8 +331,41 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           },
         }),
         // initContext: assign(initContext), // ! todo
-        setPlayersRoundOutcome: assign({}),
-        finalizePlayersBalance: assign({}),
+        setPlayersRoundResult: assign({
+          players: ({ context }) => {
+            const dealerHandInfo = calcHandInfo(context.dealer.hand.cards);
+            return context.players.map(player => ({
+              ...player,
+              hands: player.hands.map(hand => ({
+                ...hand,
+                roundResult: calcHandRoundResult({
+                  dealerHandInfo: dealerHandInfo,
+                  playerHandInfo: calcHandInfo(hand.cards),
+                }),
+              })),
+            }));
+          },
+        }),
+        finalizePlayersBalance: assign({
+          players: ({ context }) =>
+            context.players.map(player => {
+              const resultMap: Record<RoundHandResult, number> = {
+                blackjack: 2.5,
+                win: 2,
+                push: 1,
+                lose: 0,
+                bust: 0,
+              };
+              const balance = player.hands.reduce((acc, hand) => {
+                const { roundResult, bet } = hand;
+                return acc + resultMap[roundResult] * bet;
+              }, player.balance);
+              return {
+                ...player,
+                balance,
+              };
+            }),
+        }),
         setBlackjackHandsAsFinished: assign(({ context }) => {
           return {
             players: context.players.map(player => {
@@ -380,7 +414,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         }),
         setPlayerBet: assign(({ context, event }) => {
           if (event.type !== 'PLACE_BET') raiseError('Wrong event type');
-          const { playerId, handIdx = 0, bet, aggregateBet = false, isReady = false } = event.params;
+          const { playerId, handIdx = 0, bet, overrideAction, isReady = false } = event.params;
           const playerIdx = context.players.findIndex(player => player.id === playerId);
           const player = context.players[playerIdx]!;
           return {
@@ -388,9 +422,13 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               ...player,
               hands: player.hands.with(handIdx, {
                 ...player.hands[handIdx]!,
-                bet: aggregateBet ? player.hands[handIdx]!.bet + bet : bet,
+                bet: overrideAction === 'override' ? bet : player.hands[handIdx]!.bet + bet,
                 isReady,
               }),
+              balance:
+                overrideAction === 'override'
+                  ? player.balance + player.hands[handIdx]!.bet - bet
+                  : player.balance - bet,
             }),
           };
         }),
@@ -438,7 +476,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
       guards: {
         canHit: ({ context, event }) => {
           const { hand } = getCurrentTurnHand(context);
-          return calculateHand(hand.cards).validCounts.length > 0;
+          return calcHandCount(hand.cards).validCounts.length > 0;
         },
         canDouble: ({ context, event }) => {
           const { hand } = getCurrentTurnHand(context);
@@ -447,13 +485,13 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         isHand21OrMore: ({ context }) => {
           const { hand } = getCurrentTurnHand(context);
 
-          return hand.cards.length > 0 && (calculateHand(hand.cards).validCounts[0] || 22) >= 21;
+          return hand.cards.length > 0 && (calcHandCount(hand.cards).validCounts[0] || 22) >= 21;
         },
         dealerHasFinalHand: ({ context }) => {
           const { dealerMustHitOnSoft17 } = gameSettings;
 
           const { hand } = context.dealer;
-          const validCounts = calculateHand(hand.cards).validCounts;
+          const validCounts = calcHandCount(hand.cards).validCounts;
           const hasOverSoft17 =
             validCounts.length === 0 ||
             validCounts[0]! > 17 ||
@@ -464,7 +502,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           if (hasOverSoft17) return true;
           const allPlayersBust = context.players.every(player => {
             return player.hands.every(hand => {
-              const validCounts = calculateHand(hand.cards).validCounts;
+              const validCounts = calcHandCount(hand.cards).validCounts;
               return validCounts.length === 0 || validCounts[0]! > 21;
             });
           });
