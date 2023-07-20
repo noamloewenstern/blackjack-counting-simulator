@@ -42,5 +42,3 @@ export function HandProvider({ children, hand }: ProviderProps & { children: Rea
   const handState = useGetCalculateHandContext({ hand });
   return <HandContext.Provider value={handState}>{children}</HandContext.Provider>;
 }
-
-// eslint-disable-next-line react-refresh/only-export-components

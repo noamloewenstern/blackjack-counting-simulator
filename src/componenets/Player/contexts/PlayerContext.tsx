@@ -27,5 +27,3 @@ export function PlayerProvider({ children, player }: ProviderProps) {
   const playerState = useGetCalculatePlayerContext(player);
   return <PlayerContext.Provider value={playerState}>{children}</PlayerContext.Provider>;
 }
-
-// eslint-disable-next-line react-refresh/only-export-components
