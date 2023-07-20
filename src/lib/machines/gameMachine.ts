@@ -59,23 +59,23 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
     {
       id: 'BlackjackGameMachine',
       context: initContext,
-      initial: 'initial',
+      initial: 'Initial',
       states: {
-        initial: {
+        Initial: {
           on: {
             START_GAME: {
-              target: 'placePlayerBets',
+              target: 'PlacePlayerBets',
               actions: ['shuffleDeck'],
             },
           },
         },
-        placePlayerBets: {
-          initial: 'waitForBet',
+        PlacePlayerBets: {
+          initial: 'WaitForBet',
           states: {
-            waitForBet: {
+            WaitForBet: {
               always: [
                 {
-                  target: 'allBetsPlaced',
+                  target: 'AllBetsPlaced',
                   guard: 'allPlayersSetBetAndReady',
                 },
               ],
@@ -85,15 +85,15 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
                 },
               },
             },
-            allBetsPlaced: {
+            AllBetsPlaced: {
               type: 'final',
             },
           },
           onDone: {
-            target: 'dealHands',
+            target: 'DealHands',
           },
         },
-        dealHands: {
+        DealHands: {
           invoke: {
             id: 'invokeDealHandsToPlayersAndDealer',
             src: 'DealHandsToPlayersAndDealer',
@@ -109,16 +109,16 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               actions: 'hitDealerHand',
             },
             FINISHED_DEALING_INIT_CARDS: {
-              target: 'playersTurn',
+              target: 'PlayersTurn',
               guard: 'allPlayersGot2Cards',
             },
           },
         },
-        playersTurn: {
+        PlayersTurn: {
           entry: ['setBlackjackHandsAsFinished'],
-          initial: 'waitForPlayerAction',
+          initial: 'WaitForPlayerAction',
           states: {
-            waitForPlayerAction: {
+            WaitForPlayerAction: {
               entry: 'setPlayerTurn',
               on: {
                 HIT: {
@@ -135,11 +135,11 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
                 },
                 DOUBLE: {
                   guard: 'canDouble',
-                  target: 'finishedPlayerAction',
+                  target: 'FinishedPlayerAction',
                   actions: ['hitPlayerHand', 'doubleBet'],
                 },
                 STAND: {
-                  target: 'finishedPlayerAction',
+                  target: 'FinishedPlayerAction',
                 },
                 SPLIT: {
                   target: 'SplitHand',
@@ -152,31 +152,31 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               after: {
                 400: {
                   actions: 'hitPlayerHand',
-                  target: 'waitForPlayerAction',
+                  target: 'WaitForPlayerAction',
                 },
               },
             },
-            finishedPlayerAction: {
+            FinishedPlayerAction: {
               entry: 'setHandAsFinished',
               after: {
                 50: [
                   {
                     guard: 'isLastPlayedHand',
-                    target: 'noMorePlayerActions',
+                    target: 'NoMorePlayerActions',
                   },
                   {
-                    target: 'waitForPlayerAction',
+                    target: 'WaitForPlayerAction',
                   },
                 ],
               },
             },
-            noMorePlayerActions: {
+            NoMorePlayerActions: {
               type: 'final',
             },
           },
-          onDone: 'dealerTurn',
+          onDone: 'DealerTurn',
         },
-        dealerTurn: {
+        DealerTurn: {
           entry: ['setDealerTurn'], // setting first card as visible
           invoke: {
             // updateing running count for the dealer's first card, since it's visible now
@@ -188,7 +188,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           after: {
             400: [
               {
-                target: 'finalizeRound',
+                target: 'FinalizeRound',
                 guard: 'dealerHasFinalHand',
                 actions: assign({
                   dealer: ({ context }) => ({
@@ -202,13 +202,13 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               },
               {
                 actions: ['hitDealerHand'],
-                target: 'dealerTurn',
+                target: 'DealerTurn',
                 reenter: true,
               },
             ],
           },
         },
-        finalizeRound: {
+        FinalizeRound: {
           entry: ['setPlayersRoundResult', 'finalizePlayersBalance'],
           on: {
             CLEAR_TABLE_ROUND: {
@@ -216,7 +216,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             },
             DEAL_ANOTHER_ROUND: {
               actions: ['clearForNewRound'],
-              target: 'placePlayerBets',
+              target: 'PlacePlayerBets',
             },
           },
         },
