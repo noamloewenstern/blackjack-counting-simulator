@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { calculateCountingBet } from '~/lib/strategies/blackjack-counting';
 import { useRunningCount } from '~/stores/countStore';
 import { useSettingsStore } from '~/stores/settingsStore';
@@ -12,11 +12,11 @@ const useAutomateBetForCountingBots = ({ isReady, setIsReady }: { isReady: boole
   const { player } = usePlayerHand();
   const runningCount = useRunningCount(state => state.runningCount);
   const numberDecksInShoe = useSettingsStore(state => state.numberDecksInShoe);
-  const ranUseEffect = useRef(false);
+  const alreadyRanEffect = useRef(false);
   useEffect(() => {
     if (player.strategy === 'interactive' || isReady) return;
-    if (!ranUseEffect.current) {
-      ranUseEffect.current = true;
+    if (!alreadyRanEffect.current) {
+      alreadyRanEffect.current = true;
       const placeBet = (bet: number) => {
         send({
           type: 'PLACE_BET',
@@ -44,9 +44,12 @@ const useAutomateBetForCountingBots = ({ isReady, setIsReady }: { isReady: boole
 
   const bet = player.hands[0]!.bet;
 
+  const alreadyRanEffectSetBet = useRef(false);
   useEffect(() => {
-    if (player.strategy === 'interactive') return;
-    if (!isReady && bet > 0) {
+    if (player.strategy === 'interactive' || isReady || alreadyRanEffectSetBet.current) return;
+    if (bet > 0) {
+      // previously effect set the bet
+      alreadyRanEffectSetBet.current = true;
       setIsReady();
     }
   }, [bet, isReady, player.strategy, setIsReady]);
@@ -79,10 +82,7 @@ export default function BetControls() {
     });
   }
   const disableReady = hand.bet === 0;
-  if (player.strategy !== 'interactive') {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
-    useAutomateBetForCountingBots({ isReady: hand.isReady, setIsReady: handleReady });
-  }
+  useAutomateBetForCountingBots({ isReady: hand.isReady, setIsReady: handleReady });
 
   if (hand.isReady) return <h3>Ready</h3>;
 
