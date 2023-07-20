@@ -3,14 +3,14 @@ import { BlackjackStrategy } from '../strategies/utils';
 import { raiseError, sleep } from '~/utils/helpers';
 import type { Card, Hand, RoundHandResult } from '../deck';
 import { calcHandCount, isBlackjack } from '../calculateHand';
-import { calcHandInfo, calcHandRoundResult } from './utils';
+import { calcHandInfo, calcHandRoundResult, dealerHasFinalHand } from './utils';
 
 export type Player = {
   id: string;
   name: string;
   balance: number;
   hands: Hand[];
-  strategy?: BlackjackStrategy;
+  strategy: BlackjackStrategy;
 };
 type Dealer = {
   id: 'dealer';
@@ -533,15 +533,9 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           const { hand } = context.dealer;
           const validCounts = calcHandCount(hand.cards).validCounts;
 
-          const hasOverSoft17 =
-            validCounts.length === 0 ||
-            validCounts[0]! > 17 ||
-            /* soft 17 */
-            (validCounts[0] === 17 &&
-              (!validCounts[1] /* means the count is total, not soft */ ||
-                !dealerMustHitOnSoft17)); /* doesn't have to hit on soft 17 */
-
+          const hasOverSoft17 = dealerHasFinalHand(validCounts, { dealerMustHitOnSoft17 });
           if (hasOverSoft17) return true;
+
           const allPlayersBust = context.players.every(player => {
             return player.hands.every(hand => {
               const validCounts = calcHandCount(hand.cards).validCounts;
