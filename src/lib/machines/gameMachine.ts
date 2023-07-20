@@ -1,4 +1,4 @@
-import { assign, choose, createMachine, fromCallback, fromPromise, raise } from 'xstate';
+import { assign, choose, createMachine, fromCallback, fromPromise, log, raise } from 'xstate';
 import { BlackjackStrategy } from '../strategies/utils';
 import { raiseError, sleep } from '~/utils/helpers';
 import type { Card, Hand, RoundHandResult } from '../deck';
@@ -151,7 +151,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               entry: ['splitHandToTwoHands' /* ? 'setPlayerTurn' */],
               after: {
                 400: {
-                  actions: 'hitPlayerHand',
+                  actions: ['hitPlayerHand'],
                   target: 'WaitForPlayerAction',
                 },
               },
@@ -268,10 +268,11 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           deck.shuffleDeck();
         },
         hitPlayerHand: assign(({ context, event }) => {
-          const allowedEvents = ['HIT', 'STAND', 'DOUBLE', 'HIT_PLAYER'] as const;
-          if (!allowedEvents.includes(event.type)) raiseError(`Wrong event type: ${event.type}`);
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const params = (event as any).params as hitPlayerHandParams;
+          const errorParams =
+            typeof params === 'object' && (typeof params.playerIdx !== 'number' || typeof params.handIdx !== 'number');
+          if (errorParams) raiseError(`ERROR EVENT, missing params ${event.type} ${JSON.stringify(params)}`);
 
           function getParams() {
             if (!params) {
@@ -287,6 +288,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             }
           }
           const { playerIdx, handIdx, visible, player, hand } = getParams();
+
           const card = deck.drawCard({ visible });
           return {
             players: context.players.with(playerIdx, {
@@ -491,7 +493,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           const { playersIdxs } = input as { playersIdxs: number[] };
           const dealToPlayers = async () => {
             for (const playerIdx of playersIdxs) {
-              await sleep(500);
+              await sleep(300);
               sendBack({
                 type: 'HIT_PLAYER',
                 params: {
@@ -502,14 +504,14 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             }
           };
           const dealToDealer = async () => {
-            await sleep(500);
+            await sleep(300);
             sendBack({ type: 'HIT_DEALER' });
           };
           await dealToPlayers();
           await dealToDealer();
           await dealToPlayers();
           await dealToDealer();
-          await sleep(400);
+          await sleep(300);
           sendBack({ type: 'FINISHED_DEALING_INIT_CARDS' });
         }),
       },
