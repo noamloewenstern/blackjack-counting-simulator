@@ -4,7 +4,7 @@ import ActionControls from './ActionControls';
 import BetControls from './BetControls';
 import usePlayerHand from '../hooks/usePlayerHand';
 import EndGameMessage from './EndGameMessage';
-import Card from '~/componenets/Card';
+import Card from '~/components/Card';
 
 export default function HandCard() {
   const { send, isRoundFinished, isWaitingForBets, isPlayersTurn } = useGameMachine();
