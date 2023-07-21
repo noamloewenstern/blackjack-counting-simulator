@@ -3,7 +3,7 @@ import { useRunningCount } from '../stores/countStore';
 import { useGameMachine } from '~/lib/machines/gameMachineContext';
 
 const Deck = () => {
-  const { state, send, isRoundFinished, isWaitingForBets } = useGameMachine();
+  const { state, send, isRoundFinished, isWaitingForBets, isShufflingAfterRound } = useGameMachine();
   const isOnInitGame = state.matches('Initial');
 
   const handleStartGame = async () => {
@@ -27,6 +27,7 @@ const Deck = () => {
     <>
       <div className='flex'>
         <div className='flex flex-col items-center justify-center h-auto w-auto bg-gray-900 text-white p-4 rounded shadow-lg'>
+          <p className='m-1 mb-3 text-lg'>Shoe Info: {isShufflingAfterRound ? 'Shuffling!' : ''}</p>
           <RunningCount />
           {isOnInitGame && <StartGameButton onStartGame={handleStartGame} />}
           {isRoundFinished && <EndGameMessage onDealAgain={handleDealAnotherRound}></EndGameMessage>}
@@ -37,22 +38,14 @@ const Deck = () => {
       )}
     </>
   );
-
-  /*
-  <div className="flex flex-col items-center justify-center h-full">
-      <div className="bg-gray-900 text-white p-4 rounded shadow-lg">
-        Deck ({deck.length} cards)
-      </div>
-    </div>
-   */
 };
 function RunningCount() {
-  const deck = useDeckStore(state => state.deck);
+  const deck = useDeckStore(state => state.shoe);
   const [runningCount, getAbsoluteCount] = useRunningCount(state => [state.runningCount, state.getAbsoluteCount]);
-
   return (
     <>
       <p>{deck.length} cards</p>
+
       <div className='bg-gray-900 text-white p-4 rounded shadow-lg'>
         <p>Running Count: {runningCount}</p>
         <p>Absolute Count: {getAbsoluteCount()}</p>

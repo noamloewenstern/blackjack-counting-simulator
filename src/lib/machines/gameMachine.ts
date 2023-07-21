@@ -1,9 +1,10 @@
 import { assign, choose, createMachine, fromCallback, fromPromise, log, raise } from 'xstate';
 import { BlackjackStrategy } from '../strategies/utils';
 import { raiseError, sleep } from '~/utils/helpers';
-import type { Card, Hand, RoundHandResult } from '../deck';
+import type { Card, Deck, Hand, RoundHandResult } from '../deck';
 import { calcHandCount, isBlackjack } from '../calculateHand';
 import { calcHandInfo, calcHandRoundResult, dealerHasFinalHand } from './utils';
+import { doesShoeNeedShuffle } from '~/utils/gameRules';
 
 export type Player = {
   id: string;
@@ -42,6 +43,7 @@ type MachineProps = {
     initDeck: () => void;
     shuffleDeck: () => void;
     drawCard: (opts?: { visible?: boolean }) => Card;
+    shoe: Deck;
   };
   gameSettings: GameSettings;
   initContext: Context;
@@ -212,10 +214,25 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           entry: ['setPlayersRoundResult', 'finalizePlayersBalance'],
           on: {
             CLEAR_TABLE_ROUND: {
-              actions: ['clearForNewRound'],
+              actions: 'clearForNewRound',
             },
-            DEAL_ANOTHER_ROUND: {
-              actions: ['clearForNewRound'],
+            DEAL_ANOTHER_ROUND: [
+              {
+                actions: 'clearForNewRound',
+                target: 'ShuffleDeckBeforeNextDeal',
+                guard: 'doesDeckNeedShuffle',
+              },
+              {
+                actions: 'clearForNewRound',
+                target: 'PlacePlayerBets',
+              },
+            ],
+          },
+        },
+        ShuffleDeckBeforeNextDeal: {
+          entry: ['shuffleDeck'],
+          after: {
+            300: {
               target: 'PlacePlayerBets',
             },
           },
@@ -565,6 +582,12 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         },
         allPlayersSetBetAndReady: ({ context }) => {
           return context.players.every(player => player.hands.every(hand => hand.bet > 0 && hand.isReady));
+        },
+        doesDeckNeedShuffle: ({ context }) => {
+          return doesShoeNeedShuffle({
+            numberPlayers: context.players.length,
+            numberCardsInShoe: deck.shoe.length,
+          });
         },
       },
     },

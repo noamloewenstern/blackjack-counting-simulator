@@ -262,7 +262,7 @@ export const useGameStore = create(
 
     startGame: async ({ shuffle: shouldShuffle } = {}) => {
       set({ didGameStart: true });
-      const { shuffle, deck } = useDeckStore.getState();
+      const { shuffle, shoe: deck } = useDeckStore.getState();
       if (shouldShuffle || !deck.length) {
         shuffle();
       }

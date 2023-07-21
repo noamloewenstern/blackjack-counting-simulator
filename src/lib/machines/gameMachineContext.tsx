@@ -58,13 +58,14 @@ const initPlayers: Player[] = [
 ];
 function useGameMachineContext() {
   const gameSettings = useSettingsStore();
-  const { drawCard, shuffle } = useDeckStore();
+  const { drawCard, shuffle, shoe } = useDeckStore();
   const { updateCount } = useRunningCount();
   const gameMachine = createGameMachine({
     deck: {
       drawCard,
       initDeck: () => shuffle(),
       shuffleDeck: () => shuffle(),
+      shoe,
     },
     gameSettings: gameSettings,
     initContext: {
@@ -108,7 +109,8 @@ function useGameMachineContext() {
     () => state.context.players.every(player => player.hands.every(hand => hand.bet > 0)),
     [state.context.players],
   );
-  const isRoundFinished = state.matches('FinalizeRound');
+  const isShufflingAfterRound = state.matches('ShuffleDeckBeforeNextDeal');
+  const isRoundFinished = state.matches('FinalizeRound') || isShufflingAfterRound;
   const isPlayersTurn = state.matches('PlayersTurn');
   const isWaitingForBets = state.matches('PlacePlayerBets');
 
@@ -119,6 +121,7 @@ function useGameMachineContext() {
     service,
     allPlayersSetBets,
     isRoundFinished,
+    isShufflingAfterRound,
     isPlayersTurn,
     isWaitingForBets,
   };
