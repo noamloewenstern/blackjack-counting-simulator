@@ -22,7 +22,7 @@ export default function PlayerCard() {
 function PlayerHeader({ player }: { player: Player }) {
   return (
     <h2 className='text-xl font-bold'>
-      Player {player.id} | {player.strategy} | Balance: {player.balance}
+      Player: {player.id} | {player.strategy} | Balance: {player.balance}
     </h2>
   );
 }
