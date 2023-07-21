@@ -109,7 +109,9 @@ function useGameMachineContext() {
     () => state.context.players.every(player => player.hands.every(hand => hand.bet > 0)),
     [state.context.players],
   );
-  const isShufflingAfterRound = state.matches('ShuffleDeckBeforeNextDeal');
+  const isShufflingAfterRound = state.matches('FinalizeRound.ShuffleDeckBeforeNextDeal');
+  console.log(`isShufflingAfterRound`, isShufflingAfterRound);
+
   const isRoundFinished = state.matches('FinalizeRound') || isShufflingAfterRound;
   const isPlayersTurn = state.matches('PlayersTurn');
   const isWaitingForBets = state.matches('PlacePlayerBets');

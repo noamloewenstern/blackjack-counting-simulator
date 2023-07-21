@@ -35,7 +35,9 @@ const Deck = () => {
     <>
       <div className='flex'>
         <div className='flex flex-col items-center justify-center h-auto w-auto bg-gray-900 text-white p-4 rounded shadow-lg'>
-          <p className='m-1 mb-3 text-lg'>Shoe Info: {isShufflingAfterRound ? 'Shuffling!' : ''}</p>
+          <p className='m-1 mb-3 text-lg'>
+            Shoe Info: {isShufflingAfterRound && <span className='text-orange-500'>Shuffling!</span>}
+          </p>
           <RunningCount />
           {isOnInitGame && <StartGameButton onStartGame={handleStartGame} />}
           {isRoundFinished && <EndGameMessage onDealAgain={handleDealAnotherRound}></EndGameMessage>}

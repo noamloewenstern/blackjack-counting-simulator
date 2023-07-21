@@ -212,31 +212,42 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         },
         FinalizeRound: {
           entry: ['setPlayersRoundResult', 'finalizePlayersBalance'],
-          on: {
-            CLEAR_TABLE_ROUND: {
-              actions: 'clearForNewRound',
-            },
-            DEAL_ANOTHER_ROUND: [
-              {
-                actions: 'clearForNewRound',
-                target: 'ShuffleDeckBeforeNextDeal',
-                guard: 'doesDeckNeedShuffle',
+          initial: 'WaitForEventToStartNewRound',
+
+          states: {
+            WaitForEventToStartNewRound: {
+              after: {
+                300: {
+                  target: 'ShuffleDeckBeforeNextDeal',
+                  guard: 'doesDeckNeedToBeShuffled',
+                },
               },
-              {
-                actions: 'clearForNewRound',
-                target: 'PlacePlayerBets',
+              on: {
+                CLEAR_TABLE_ROUND: {
+                  actions: 'clearForNewRound',
+                },
+                DEAL_ANOTHER_ROUND: {
+                  actions: 'clearForNewRound',
+                  target: 'GoToPlacePlayerBets',
+                },
               },
-            ],
-          },
-        },
-        ShuffleDeckBeforeNextDeal: {
-          entry: ['shuffleDeck'],
-          after: {
-            300: {
-              target: 'PlacePlayerBets',
+            },
+            ShuffleDeckBeforeNextDeal: {
+              after: {
+                1000: {
+                  target: 'WaitForEventToStartNewRound',
+                },
+              },
+              exit: ['shuffleDeck'],
+            },
+            GoToPlacePlayerBets: {
+              type: 'final',
             },
           },
+          onDone: 'PlacePlayerBets',
         },
+
+        /* END states */
       },
 
       types: {} as {
@@ -502,9 +513,6 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           }),
           playerHandTurn: undefined,
         }),
-        clearPlayersBets: ({ context }) => {
-          return context.players.every(player => player.hands.every(hand => hand.bet > 0 && hand.isReady));
-        },
       },
       actors: {
         DealHandsToPlayersAndDealer: fromCallback(async (sendBack, _, { input }) => {
@@ -583,7 +591,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         allPlayersSetBetAndReady: ({ context }) => {
           return context.players.every(player => player.hands.every(hand => hand.bet > 0 && hand.isReady));
         },
-        doesDeckNeedShuffle: ({ context }) => {
+        doesDeckNeedToBeShuffled: ({ context }) => {
           return doesShoeNeedShuffle({
             numberPlayers: context.players.length,
             numberCardsInShoe: deck.shoe.length,
