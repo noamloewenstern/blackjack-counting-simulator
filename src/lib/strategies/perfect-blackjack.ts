@@ -47,23 +47,27 @@ export const HardTotalAction: Record<string, readonly HardTotalAction[]> = {
   '8': ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
 } as const;
 function isSoftHand(playerHand: Card[]): boolean {
-  return playerHand.some(card => card.value === 'A');
-}
-function getSoftAction(
-  playerHand: Card[],
-  dealerCount: number,
-  { canDouble }: { canDouble: boolean },
-): HardTotalAction {
   const { validCounts } = calcHandCount(playerHand);
-  const playerTotal = validCounts[0] || 0;
-  if (!SoftTotalStrategy[playerTotal]?.[dealerCount - 2]) {
-    if (playerHand.length > 2) {
-      return getHardAction(playerHand, dealerCount, { canDouble: false });
-    }
-    throw new Error(`Invalid playerTotal:${playerTotal} and dealerCount:${dealerCount} for soft hand`);
+  return playerHand.some(card => card.value === 'A') && validCounts.length > 1 && !!SoftTotalStrategy[validCounts[0]!];
+}
+function getSoftAction({
+  playerHand,
+  dealerCount,
+  validCounts,
+  canDouble,
+}: {
+  playerHand: Card[];
+  dealerCount: number;
+  canDouble: boolean;
+  validCounts: number[];
+}): HardTotalAction {
+  const higherSoftCount = validCounts[0] || 0;
+  const softCountAction = SoftTotalStrategy[higherSoftCount]?.[dealerCount - 2];
+  if (!softCountAction) {
+    throw new Error(`Invalid playerTotal:${higherSoftCount} and dealerCount:${dealerCount} for soft hand`);
   }
-  const action = SoftTotalStrategy[playerTotal]?.[dealerCount - 2];
-  if (!action) raiseError(`Invalid action:${action} for playerTotal:${playerTotal} and dealerCount:${dealerCount}`);
+  const action = softCountAction;
+  if (!action) raiseError(`Invalid action:${action} for playerTotal:${higherSoftCount} and dealerCount:${dealerCount}`);
   if (action === 'D' && !canDouble) {
     return 'H';
   }
@@ -91,12 +95,17 @@ function getSplitAction(playerHand: Card[], dealerCount: number, { canDoubleAfte
   return action;
 }
 
-function getHardAction(
-  playerHand: Card[],
-  dealerCount: number,
-  { canDouble }: { canDouble: boolean },
-): HardTotalAction {
-  const { validCounts } = calcHandCount(playerHand);
+function getHardAction({
+  playerHand,
+  dealerCount,
+  validCounts,
+  canDouble,
+}: {
+  playerHand: Card[];
+  dealerCount: number;
+  validCounts: number[];
+  canDouble: boolean;
+}): HardTotalAction {
   const playerTotal = validCounts[0];
   if (!playerTotal) {
     throw new Error(`Invalid playerTotal:${playerTotal} and dealerCount:${dealerCount} for hard hand - IS BUST`);
@@ -118,6 +127,8 @@ function getHardAction(
   }
   return action;
 }
+
+/* CALC ACTION */
 export function getActionByStrategy(playerHand: Card[], dealerCount: number, settings: ActionSettings): Action {
   // Ensure playerTotal and dealerCard are in the valid range
   if (dealerCount < 2 || dealerCount > 11) {
@@ -136,42 +147,22 @@ export function getActionByStrategy(playerHand: Card[], dealerCount: number, set
   }
 
   const { validCounts } = calcHandCount(playerHand);
-  if (validCounts[0] === 20 || validCounts.length === 0) {
+  if (
+    validCounts.length === 0 ||
+    validCounts[0] === 20 /* includes soft 20 */ ||
+    (validCounts.length === 1 && validCounts[0]! >= 17)
+  ) {
     return 'S';
   }
   if (isSoftHand(playerHand)) {
-    const action = getSoftAction(playerHand, dealerCount, { canDouble: settings.canDouble });
+    const action = getSoftAction({ playerHand, dealerCount, validCounts, canDouble: settings.canDouble });
     return action;
   }
 
   // hard hand
-  const action = getHardAction(playerHand, dealerCount, { canDouble: settings.canDouble });
+  const action = getHardAction({ playerHand, dealerCount, validCounts, canDouble: settings.canDouble });
   return action;
 }
-
-// type PlayArgs = {
-//   playerHand: Hand;
-//   dealerCount: number;
-//   strategy: Action[][];
-//   drawCard: () => Card;
-// };
-
-// export function playHandAccordingToStrategy(playArgs: PlayArgs, settings: ActionSettings) {
-//   const { dealerCount, strategy, drawCard } = playArgs;
-//   const playerHand = [...playArgs.playerHand];
-
-//   let action = getActionByStrategy(playerHand, dealerCount);
-//   while (action !== 'S' && action !== 'D') {
-//     if (action === 'H') {
-//       const newCard = drawCard();
-//       playerHand.push(newCard);
-//     }
-//     action = getActionByStrategy(playerHand, dealerCount);
-//   }
-// }
-// function hasAce(playerHand: Hand) {
-//   return playerHand.some(card => card.number === 'A');
-// }
 
 export function calculateBetPerfectBlackjack() {
   // todo: implement change base on different tests
