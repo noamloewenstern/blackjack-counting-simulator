@@ -1,27 +1,35 @@
 import { useDeckStore } from '../stores/deckStore';
 import { useRunningCount } from '../stores/countStore';
 import { useGameMachine } from '~/lib/machines/gameMachineContext';
+import { useCallback, useEffect, useRef } from 'react';
+import { useSettingsStore } from '~/stores/settingsStore';
 
 const Deck = () => {
   const { state, send, isRoundFinished, isWaitingForBets, isShufflingAfterRound } = useGameMachine();
   const isOnInitGame = state.matches('Initial');
+  const automateInteractivePlayer = useSettingsStore(state => state.automateInteractivePlayer);
 
-  const handleStartGame = async () => {
+  const handleStartGame = useCallback(() => {
     send({ type: 'START_GAME' });
-  };
-  const handleDealAnotherRound = () => {
+  }, [send]);
+  const handleDealAnotherRound = useCallback(() => {
     send({ type: 'DEAL_ANOTHER_ROUND' });
-  };
+  }, [send]);
 
-  // useEffect(() => {
-  //   if (!clickedInitStartedGame && !didRoundStart && areAllPlayersReady) {
-  //     clickedInitStartedGame = true;
-  //     setTimeout(startGame, 300);
-  //   }
-  //   if (didRoundStart) {
-  //     clickedInitStartedGame = false;
-  //   }
-  // }, [areAllPlayersReady, didRoundStart, startGame]);
+  const alreadyAutoStartedRound = useRef(false);
+  useEffect(() => {
+    if (!automateInteractivePlayer) return;
+    if (!isOnInitGame && !isRoundFinished) {
+      alreadyAutoStartedRound.current = false; // reset after started playing (on state change)/ will accure after calling start game
+      return;
+    }
+    if (alreadyAutoStartedRound.current) return;
+    alreadyAutoStartedRound.current = true;
+    setTimeout(() => {
+      if (isOnInitGame) handleStartGame();
+      else if (isRoundFinished) handleDealAnotherRound();
+    }, 300);
+  }, [automateInteractivePlayer, handleDealAnotherRound, handleStartGame, isOnInitGame, isRoundFinished]);
 
   return (
     <>
