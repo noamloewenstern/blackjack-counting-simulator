@@ -238,6 +238,15 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
                   target: 'WaitForEventToStartNewRound',
                 },
               },
+              on: {
+                CLEAR_TABLE_ROUND: {
+                  actions: 'clearForNewRound',
+                },
+                DEAL_ANOTHER_ROUND: {
+                  actions: ['clearForNewRound'],
+                  target: 'GoToPlacePlayerBets',
+                },
+              },
               exit: ['shuffleDeck'],
             },
             GoToPlacePlayerBets: {
