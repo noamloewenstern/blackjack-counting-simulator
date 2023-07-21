@@ -420,6 +420,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
                   id: `${hand.id}-1`,
                   cards: [card2],
                 }),
+              balance: player.balance - hand.bet,
             }),
           };
         }),
