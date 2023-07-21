@@ -84,33 +84,19 @@ function useGameMachineContext() {
     updateRunningCount: card => updateCount(card),
   });
   const [state, send, service] = useActor(gameMachine, {
-    devTools: true,
-    logger: msg => console.log(msg),
+    // devTools: true,
+    // logger: msg => console.log(msg),
   });
   const sendWithLog = (event: Parameters<typeof send>[0]) => {
-    console.log('send', event);
+    console.debug('send', event);
     send(event);
   };
-
-  useEffect(() => {
-    const parsed = typeof state.value === 'object' ? JSON.stringify(state.value) : state.value;
-    console.log('state.value', parsed);
-    // state.matches('placePlayerBets');
-  }, [state.value]);
-  useEffect(() => {
-    // console.log('state.done', state.done);
-  }, [state.done]);
-
-  // console.table(gameMachine);
-  // console.table(state)
-  // state.historyValue;
 
   const allPlayersSetBets = useMemo(
     () => state.context.players.every(player => player.hands.every(hand => hand.bet > 0)),
     [state.context.players],
   );
   const isShufflingAfterRound = state.matches('FinalizeRound.ShuffleDeckBeforeNextDeal');
-  console.log(`isShufflingAfterRound`, isShufflingAfterRound);
 
   const isRoundFinished = state.matches('FinalizeRound') || isShufflingAfterRound;
   const isPlayersTurn = state.matches('PlayersTurn');

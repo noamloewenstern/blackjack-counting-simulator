@@ -43,8 +43,6 @@ export default function ActionControls() {
     } as const;
     const sendAction = actionMap[strategy.recommendation];
     setTimeout(() => {
-      console.log(`player: ${player.id}: sendAction`, strategy.recommendation);
-
       sendAction();
     }, 300);
   }, [
