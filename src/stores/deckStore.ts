@@ -19,8 +19,9 @@ export const useDeckStore = create(
     shuffle: () => {
       const { numberDecksInShoe: numberOfDecks } = useSettingsStore.getState();
       const newDecks = Array.from({ length: numberOfDecks }).map(createDeck).flat();
-      const shuffledNewDeck = shuffleDeck(shuffleDeck(newDecks));
+      const shuffledNewDeck = shuffleDeck(newDecks);
       set({ shoe: shuffledNewDeck });
+      useRunningCount.getState().resetCount();
       return shuffledNewDeck;
     },
     drawCard: ({ visible = true } = {}) => {
