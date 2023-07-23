@@ -3,6 +3,7 @@ import { useRunningCount } from '../stores/countStore';
 import { useGameMachine } from '~/lib/machines/gameMachineContext';
 import { useCallback, useEffect, useRef } from 'react';
 import { useIsAutomateInteractivePlayer } from '~/stores/settingsStore';
+import { formatNumber } from '~/lib/utils';
 
 function useAutoPlay({
   handleStartGame,
@@ -67,7 +68,7 @@ function RunningCount() {
   return (
     <div className='bg-gray-900 text-white text-start py-4 w-40 self-start rounded shadow-lg'>
       <p>Running Count: {runningCount}</p>
-      <p>Absolute Count: {getAbsoluteCount()}</p>
+      <p>Absolute Count: {formatNumber(getAbsoluteCount(), 2)}</p>
     </div>
   );
 }
