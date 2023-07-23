@@ -76,7 +76,7 @@ export function calcHandCount(cards: Card[] | Card['value'][]): {
   );
   const result = {
     validCounts: groupsCounts.get('validCounts') ?? [],
-    bustCount: groupsCounts.get('bustCount')?.toSorted()?.[0] ?? 0,
+    bustCount: [...(groupsCounts.get('bustCount') || [])].sort()?.[0] ?? 0,
   };
   calculateHandCache.set(cachedKey, result);
   return result;
