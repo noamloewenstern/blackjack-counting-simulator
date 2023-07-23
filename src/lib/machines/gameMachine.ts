@@ -182,7 +182,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         DealerTurn: {
           entry: ['setDealerTurn'], // setting first card as visible
           invoke: {
-            // updateing running count for the dealer's first card, since it's visible now
+            // updating running count for the dealer's first card, since it's visible now
             src: fromPromise(async ({ input: card }) => {
               updateRunningCount(card);
             }),
