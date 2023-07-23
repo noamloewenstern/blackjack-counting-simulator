@@ -28,7 +28,8 @@ type Context = {
   roundsPlayed: number;
 };
 
-type NewType = {
+type MachineProps = {
+  id: string;
   deck: {
     initDeck: () => void;
     shuffleDeck: () => void;
@@ -42,8 +43,6 @@ type NewType = {
   updateRunningCount: (card: Card) => void;
 };
 
-type MachineProps = NewType;
-
 type hitPlayerHandParams = {
   playerIdx: number;
   handIdx: number;
@@ -51,10 +50,10 @@ type hitPlayerHandParams = {
   visible?: boolean;
 };
 
-export const createGameMachine = ({ deck, gameSettings, initContext, updateRunningCount }: MachineProps) =>
+export const createGameMachine = ({ deck, gameSettings, initContext, updateRunningCount, id }: MachineProps) =>
   createMachine(
     {
-      id: 'BlackjackGameMachine',
+      id,
       context: initContext,
       initial: 'Initial',
       states: {
@@ -262,7 +261,6 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
       },
 
       types: {} as {
-
         events:
           | { type: 'START_GAME' }
           | {

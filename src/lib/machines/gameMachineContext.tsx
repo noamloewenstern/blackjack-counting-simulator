@@ -5,6 +5,7 @@ import { Player, createGameMachine } from './gameMachine';
 import { useDeckStore } from '~/stores/deckStore';
 import { useAutomationSettingsStore, useSettingsStore } from '~/stores/settingsStore';
 import { useRunningCount } from '~/stores/countStore';
+import { nanoid } from 'nanoid';
 
 type Context = ReturnType<typeof useGameMachineContext>;
 export const GameMachineContext = createContext<Context | null>(null);
@@ -61,33 +62,38 @@ function useGameMachineContext() {
   const automationSettings = useAutomationSettingsStore();
   const { drawCard, shuffle, shoe } = useDeckStore();
   const { updateCount } = useRunningCount();
-  const gameMachine = createGameMachine({
-    deck: {
-      drawCard,
-      initDeck: () => shuffle(),
-      shuffleDeck: () => shuffle(),
-      shoe,
-    },
-    gameSettings: {
-      ...gameSettings,
-      automation: automationSettings,
-    },
-    initContext: {
-      dealer: {
-        id: 'dealer',
-        hand: {
-          id: 'dealerHand',
-          cards: [],
-          isFinished: false,
-          isReady: true,
+  const gameMachine = useMemo(
+    () =>
+      createGameMachine({
+        id: `BlackjackGameMachine-${nanoid()}`,
+        deck: {
+          drawCard,
+          initDeck: () => shuffle(),
+          shuffleDeck: () => shuffle(),
+          shoe,
         },
-      },
-      playerHandTurn: undefined,
-      players: initPlayers,
-      roundsPlayed: 0,
-    },
-    updateRunningCount: card => updateCount(card),
-  });
+        gameSettings: {
+          ...gameSettings,
+          automation: automationSettings,
+        },
+        initContext: {
+          dealer: {
+            id: 'dealer',
+            hand: {
+              id: 'dealerHand',
+              cards: [],
+              isFinished: false,
+              isReady: true,
+            },
+          },
+          playerHandTurn: undefined,
+          players: initPlayers,
+          roundsPlayed: 0,
+        },
+        updateRunningCount: card => updateCount(card),
+      }),
+    [automationSettings, drawCard, gameSettings, shoe, shuffle, updateCount],
+  );
   const [state, send, service] = useActor(gameMachine, {
     // devTools: true,
     // logger: msg => console.log(msg),
