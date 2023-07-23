@@ -17,6 +17,7 @@ export type SettingsStore = {
   numberDecksInShoe: number;
   dealerMustHitOnSoft17: boolean;
   allowedToDoubleAfterSplit: boolean;
+  allowedToDouble: boolean;
 };
 type Actions = {
   setNumberOfDecks: (numberOfDecks: number) => void;
@@ -27,6 +28,7 @@ export const useSettingsStore = create(
     numberDecksInShoe: 4,
     dealerMustHitOnSoft17: true,
     allowedToDoubleAfterSplit: true,
+    allowedToDouble: true,
 
     setNumberOfDecks: (numberOfDecks: number) => set({ numberDecksInShoe: numberOfDecks }),
   })),
