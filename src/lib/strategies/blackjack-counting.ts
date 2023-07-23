@@ -1,3 +1,5 @@
+import { roundToNearestHalf } from '../utils';
+
 export function calculateCountingBet({
   runningCount,
   numberDecksInShoe,
@@ -6,7 +8,7 @@ export function calculateCountingBet({
   numberDecksInShoe: number;
 }): number {
   // Calculate the absolute count
-  const absCount = runningCount / numberDecksInShoe;
+  const absCount = roundToNearestHalf(runningCount / numberDecksInShoe);
 
   // Initialize bet at 100
   let bet = 100;
