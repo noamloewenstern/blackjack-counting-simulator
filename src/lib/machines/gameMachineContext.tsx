@@ -80,6 +80,7 @@ function useGameMachineContext() {
       },
       playerHandTurn: undefined,
       players: initPlayers,
+      roundsPlayed: 0,
     },
     updateRunningCount: card => updateCount(card),
   });

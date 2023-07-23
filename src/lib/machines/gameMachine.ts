@@ -24,6 +24,7 @@ type Context = {
   players: Player[];
   dealer: Dealer;
   playerHandTurn?: 'dealer' | `${PlayerIdx}.${HandIdx}`;
+  roundsPlayed: number;
 };
 type GameSettings = {
   numberDecksInShoe: number;
@@ -96,6 +97,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           },
         },
         DealHands: {
+          entry: ['IncrementRoundsPlayed'],
           invoke: {
             id: 'invokeDealHandsToPlayersAndDealer',
             src: 'DealHandsToPlayersAndDealer',
@@ -304,6 +306,9 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         shuffleDeck: () => {
           deck.shuffleDeck();
         },
+        IncrementRoundsPlayed: assign({
+          roundsPlayed: ({ context }) => context.roundsPlayed + 1,
+        }),
         hitPlayerHand: assign(({ context, event }) => {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const params = (event as any).params as hitPlayerHandParams;
