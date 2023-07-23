@@ -1,7 +1,7 @@
 {
   "name": "vite-project",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --port 3000",
@@ -11,16 +11,27 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@radix-ui/react-checkbox": "^1.0.4",
+    "@radix-ui/react-dropdown-menu": "^2.0.5",
+    "@radix-ui/react-label": "^2.0.2",
+    "@radix-ui/react-slot": "^1.0.2",
+    "@radix-ui/react-switch": "^1.0.3",
     "@sinonjs/fake-timers": "10.1.0",
     "@total-typescript/ts-reset": "^0.4.2",
-    "@xstate/inspect": "^0.8.0",
     "@xstate/react": "4.0.0-beta.8",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.0.0",
     "immer": "^10.0.2",
     "jotai": "^2.2.2",
     "lru-cache": "^10.0.0",
+    "lucide-react": "^0.263.0",
+    "next-themes": "^0.2.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-use": "^17.4.0",
     "simple-zustand-devtools": "^1.1.0",
+    "tailwind-merge": "^1.14.0",
+    "tailwindcss-animate": "^1.0.6",
     "xstate": "5.0.0-beta.18",
     "zustand": "^4.3.9"
   },
@@ -42,6 +53,7 @@
     "sass": "^1.63.6",
     "tailwindcss": "^3.3.3",
     "ts-jest": "^29.1.1",
+    "tsx": "^3.12.7",
     "typescript": "^5.1.6",
     "vite": "^4.4.4"
   }
