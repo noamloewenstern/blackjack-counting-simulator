@@ -15,14 +15,14 @@ const initPlayers: Player[] = [
     name: 'player interactive',
     hands: [
       {
-        id: 'player1Hand',
+        id: 'Hand-0',
         bet: 0,
         cards: [],
         isFinished: false,
         isReady: false,
       },
     ],
-    balance: 50_000,
+    balance: 150_000,
     strategy: 'interactive',
   },
   {
@@ -30,14 +30,14 @@ const initPlayers: Player[] = [
     name: 'player perfect-blackjack',
     hands: [
       {
-        id: 'player2Hand',
+        id: 'Hand-0',
         bet: 0,
         cards: [],
         isFinished: false,
         isReady: false,
       },
     ],
-    balance: 50_000,
+    balance: 150_000,
     strategy: 'perfect-blackjack',
   },
   {
@@ -45,14 +45,14 @@ const initPlayers: Player[] = [
     name: 'player counting',
     hands: [
       {
-        id: 'player3Hand',
+        id: 'Hand-0',
         bet: 0,
         cards: [],
         isFinished: false,
         isReady: false,
       },
     ],
-    balance: 50_000,
+    balance: 150_000,
     strategy: 'counting',
   },
 ];
