@@ -457,7 +457,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           };
         }),
         hitHandIfHasJust1Card: pure(({ context }) => {
-          const { playerIdx, player, hand, handIdx } = getCurrentTurnHand(context);
+          const { hand } = getCurrentTurnHand(context);
           if (hand.cards.length === 1) {
             // meaning: is the following hand after split
             return ['hitPlayerHand'];
@@ -465,7 +465,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           return [];
         }),
         setFishedIfIsBlackjack: pure(({ context }) => {
-          const { playerIdx, player, hand, handIdx } = getCurrentTurnHand(context);
+          const { hand } = getCurrentTurnHand(context);
           if (isBlackjack(hand.cards)) {
             return ['setHandAsFinished'];
           }
@@ -476,19 +476,23 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           const { playerId, handIdx = 0, bet, overrideAction, isReady = false } = event.params;
           const playerIdx = context.players.findIndex(player => player.id === playerId);
           const player = context.players[playerIdx]!;
+          const newBet = overrideAction === 'override' ? bet : player.hands[handIdx]!.bet + bet;
+          const newHandInfo = {
+            ...player.hands[handIdx]!,
+            bet: newBet,
+            isReady,
+          };
+          const newBalance =
+            overrideAction === 'override' ? player.balance + player.hands[handIdx]!.bet - bet : player.balance - bet;
+          if (newBalance < 0) raiseError('Not enough balance');
+
+          const newPlayerInfo = {
+            ...player,
+            hands: player.hands.with(handIdx, newHandInfo),
+            balance: newBalance,
+          };
           return {
-            players: context.players.with(playerIdx, {
-              ...player,
-              hands: player.hands.with(handIdx, {
-                ...player.hands[handIdx]!,
-                bet: overrideAction === 'override' ? bet : player.hands[handIdx]!.bet + bet,
-                isReady,
-              }),
-              balance:
-                overrideAction === 'override'
-                  ? player.balance + player.hands[handIdx]!.bet - bet
-                  : player.balance - bet,
-            }),
+            players: context.players.with(playerIdx, newPlayerInfo),
           };
         }),
         setDealerTurn: assign({
@@ -510,7 +514,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               ...player,
               hands: [
                 {
-                  id: `Player-${idx}-Hand-0`,
+                  id: `Hand-0`,
                   cards: [],
                   bet: 0,
                   isReady: false,
