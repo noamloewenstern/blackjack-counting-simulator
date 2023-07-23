@@ -15,6 +15,7 @@ export type AutomateStore = {
     playerAction: number;
   };
   setIntervalWaits: (intervalWaits: Partial<AutomateStore['intervalWaits']>) => void;
+  reset: (newState?: Partial<AutomateStore>) => void;
 };
 export type SettingsStore = {
   numberDecksInShoe: number;
@@ -24,6 +25,7 @@ export type SettingsStore = {
 };
 type Actions = {
   setNumberOfDecks: (numberOfDecks: number) => void;
+  reset: (newState?: Partial<SettingsStore>) => void;
 };
 
 export const useSettingsStore = create(
@@ -35,6 +37,16 @@ export const useSettingsStore = create(
       allowedToDouble: true,
 
       setNumberOfDecks: (numberOfDecks: number) => set({ numberDecksInShoe: numberOfDecks }),
+      reset: (newState = {}) => {
+        localStorage.removeItem('settings');
+        set(state => ({
+          numberDecksInShoe: 6,
+          dealerMustHitOnSoft17: true,
+          allowedToDoubleAfterSplit: true,
+          allowedToDouble: true,
+          ...newState,
+        }));
+      },
     })),
     {
       name: 'settings',
@@ -57,6 +69,22 @@ export const useAutomationSettingsStore = create(
       },
       setIntervalWaits: (intervalWaits: Partial<AutomateStore['intervalWaits']>) =>
         set(state => ({ intervalWaits: { ...state.intervalWaits, ...intervalWaits } })),
+      reset: (newState = {}) => {
+        localStorage.removeItem('automate-settings');
+        set({
+          isOn: false,
+          ...newState,
+          intervalWaits: {
+            betweenPlays: 1000,
+            shuffleDeckBeforeNextDeal: 1000,
+            splitHand: 400,
+            hitDealer: 400,
+            hitPlayer: 400,
+            playerAction: 400,
+            ...(newState.intervalWaits || {}),
+          },
+        });
+      },
     })),
     {
       name: 'automate-settings',

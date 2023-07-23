@@ -1,6 +1,6 @@
 import Dealer from './Dealer';
 import Deck from './Deck';
-import Settings from './Settings/Settings';
+import SettingsNav from './Settings/SettingsNav';
 import GameHeader from './GameHeader';
 import Players from './Player/Players';
 
@@ -13,7 +13,7 @@ export default function Game() {
         <Dealer />
         <Players />
       </div>
-      <Settings />
+      <SettingsNav />
     </div>
   );
 }

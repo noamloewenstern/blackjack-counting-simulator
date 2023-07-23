@@ -1,6 +1,3 @@
-import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
-
 import { useCallback, useState } from 'react';
 import { Button } from '~/components/ui/button';
 import {
@@ -17,33 +14,46 @@ import { Label } from '~/components/ui/label';
 import { useAutomationSettingsStore, useSettingsStore } from '~/stores/settingsStore';
 import { useToast } from '~/components/ui/use-toast';
 
-export default function SettingsDialog() {
+export default function SettingsDialog({ onReset }: { onReset: () => void }) {
   const { toast } = useToast();
 
-  const [numberDecksInShoe, setNumberOfDecks] = useSettingsStore(state => [
+  const [numberDecksInShoe, setNumberOfDecks, resetNumberDecks] = useSettingsStore(state => [
     state.numberDecksInShoe,
     state.setNumberOfDecks,
+    state.reset,
   ]);
-  const [intervalWaits, setIntervalWaits] = useAutomationSettingsStore(state => [
+  const [intervalWaits, setIntervalWaits, resetTimeoutSettings] = useAutomationSettingsStore(state => [
     state.intervalWaits,
     state.setIntervalWaits,
+    state.reset,
   ]);
 
   const [numberDecksInShoeTemp, setNumberOfDecksTemp] = useState(numberDecksInShoe);
 
   const [timeoutWaitSettingsTemp, setTimeoutSettingTemp] = useState(intervalWaits);
-  const { betweenPlays, shuffleDeckBeforeNextDeal, splitHand, hitDealer, hitPlayer, playerAction } =
-    timeoutWaitSettingsTemp;
+
   const setTimeoutSettingByName = useCallback((name: keyof typeof intervalWaits, value: number) => {
     setTimeoutSettingTemp(state => ({ ...state, [name]: value }));
   }, []);
 
   const saveChanges = useCallback(() => {
-    setIntervalWaits(timeoutWaitSettingsTemp);
     setNumberOfDecks(numberDecksInShoeTemp);
+    setIntervalWaits(timeoutWaitSettingsTemp);
     toast({ title: 'Saved Changes' });
   }, [numberDecksInShoeTemp, setIntervalWaits, setNumberOfDecks, timeoutWaitSettingsTemp, toast]);
 
+  const resetChanges = useCallback(() => {
+    setNumberOfDecksTemp(numberDecksInShoe);
+    setTimeoutSettingTemp(intervalWaits);
+    resetNumberDecks();
+    resetTimeoutSettings();
+    onReset();
+
+    toast({ title: 'Reset Changes' });
+  }, [intervalWaits, numberDecksInShoe, onReset, resetNumberDecks, resetTimeoutSettings, toast]);
+
+  const { betweenPlays, shuffleDeckBeforeNextDeal, splitHand, hitDealer, hitPlayer, playerAction } =
+    timeoutWaitSettingsTemp;
   return (
     <Dialog>
       <DialogTrigger asChild>
@@ -144,6 +154,7 @@ export default function SettingsDialog() {
           <Button type='submit' onClick={saveChanges}>
             Save changes
           </Button>
+          <Button onClick={resetChanges}>Reset</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
