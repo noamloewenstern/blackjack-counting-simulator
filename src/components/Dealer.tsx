@@ -6,14 +6,12 @@ function DealerHand() {
   const { isRoundFinished } = useGameMachine();
 
   return (
-    <div className='h-60'>
-      <div>
-        <h2 className='text-xl font-bold'>
-          Dealer
-          {isRoundFinished && <EndGameDealerMessage />}
-        </h2>
-        <DealerCount />
-      </div>
+    <div>
+      <h2 className='text-xl font-bold'>
+        Dealer
+        {isRoundFinished && <EndGameDealerMessage />}
+      </h2>
+      <DealerCount />
       <DealerCards />
     </div>
   );

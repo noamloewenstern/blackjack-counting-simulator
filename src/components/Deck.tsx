@@ -4,18 +4,16 @@ import { useGameMachine } from '~/lib/machines/gameMachineContext';
 import { useCallback, useEffect, useRef } from 'react';
 import { useSettingsStore } from '~/stores/settingsStore';
 
-const Deck = () => {
+const useAutoPlay = ({
+  handleStartGame,
+  handleDealAnotherRound,
+}: {
+  handleStartGame: () => void;
+  handleDealAnotherRound: () => void;
+}) => {
   const { state, send, isRoundFinished, isWaitingForBets, isShufflingAfterRound } = useGameMachine();
   const isOnInitGame = state.matches('Initial');
   const automateInteractivePlayer = useSettingsStore(state => state.automateInteractivePlayer);
-
-  const handleStartGame = useCallback(() => {
-    send({ type: 'START_GAME' });
-  }, [send]);
-  const handleDealAnotherRound = useCallback(() => {
-    send({ type: 'DEAL_ANOTHER_ROUND' });
-  }, [send]);
-
   const alreadyAutoStartedRound = useRef(false);
   useEffect(() => {
     if (!automateInteractivePlayer) return;
@@ -30,15 +28,30 @@ const Deck = () => {
       else if (isRoundFinished) handleDealAnotherRound();
     }, 300);
   }, [automateInteractivePlayer, handleDealAnotherRound, handleStartGame, isOnInitGame, isRoundFinished]);
+};
+
+export default function Deck() {
+  const { state, send, isRoundFinished, isWaitingForBets, isShufflingAfterRound } = useGameMachine();
+  const isOnInitGame = state.matches('Initial');
+  const deck = useDeckStore(state => state.shoe);
+
+  const handleStartGame = useCallback(() => send({ type: 'START_GAME' }), [send]);
+  const handleDealAnotherRound = useCallback(() => send({ type: 'DEAL_ANOTHER_ROUND' }), [send]);
+
+  useAutoPlay({ handleStartGame, handleDealAnotherRound });
+
+  const roundsPlayed = state.context.roundsPlayed;
 
   return (
     <>
-      <div className='flex'>
-        <div className='flex flex-col items-center justify-center h-auto w-auto bg-gray-900 text-white p-4 rounded shadow-lg'>
-          <p className='m-1 mb-3 text-lg'>
-            Shoe Info: {isShufflingAfterRound && <span className='text-orange-500'>Shuffling!</span>}
+      <div className='absolute left-4 top-4'>
+        <div className='flex flex-col items-start justify-start h-auto w-auto bg-gray-900 text-white p-4 rounded shadow-lg'>
+          <p className='my-1 text-lg'>
+            Shoe Info: {isShufflingAfterRound && <span className='text-orange-500 text-start'>Shuffling!</span>}
           </p>
+          <p>{deck.length} cards</p>
           <RunningCount />
+          {roundsPlayed !== 0 && <p>Rounds Played: {roundsPlayed}</p>}
           {isOnInitGame && <StartGameButton onStartGame={handleStartGame} />}
           {isRoundFinished && <EndGameMessage onDealAgain={handleDealAnotherRound}></EndGameMessage>}
         </div>
@@ -48,19 +61,14 @@ const Deck = () => {
       )}
     </>
   );
-};
+}
 function RunningCount() {
-  const deck = useDeckStore(state => state.shoe);
   const [runningCount, getAbsoluteCount] = useRunningCount(state => [state.runningCount, state.getAbsoluteCount]);
   return (
-    <>
-      <p>{deck.length} cards</p>
-
-      <div className='bg-gray-900 text-white p-4 rounded shadow-lg'>
-        <p>Running Count: {runningCount}</p>
-        <p>Absolute Count: {getAbsoluteCount()}</p>
-      </div>
-    </>
+    <div className='bg-gray-900 text-white text-start py-4 w-40 self-start rounded shadow-lg'>
+      <p>Running Count: {runningCount}</p>
+      <p>Absolute Count: {getAbsoluteCount()}</p>
+    </div>
   );
 }
 function StartGameButton({ onStartGame }: { onStartGame: () => void }) {
@@ -85,5 +93,3 @@ function EndGameMessage({ onDealAgain }: { onDealAgain: () => void }) {
     </button>
   );
 }
-
-export default Deck;

@@ -1,23 +1,19 @@
 import Dealer from './Dealer';
 import Deck from './Deck';
-import { PlayerProvider } from './Player/contexts/PlayerContext';
-import PlayerCard from './Player/PlayerCard';
-import { useGameMachine } from '~/lib/machines/gameMachineContext';
+import Settings from './Settings/Settings';
+import GameHeader from './GameHeader';
+import Players from './Player/Players';
 
 export default function Game() {
-  const { state } = useGameMachine();
   return (
-    <div className='game'>
+    <div>
+      <GameHeader />
       <Deck />
-      <Dealer />
-      <div className='h-20' />
-      <div className='flex content-between justify-around'>
-        {state.context.players.map(player => (
-          <PlayerProvider key={player.id} player={player}>
-            <PlayerCard />
-          </PlayerProvider>
-        ))}
+      <div className='flex flex-col pt-32 gap-10 px-12 justify-around h-screen w-screen '>
+        <Dealer />
+        <Players />
       </div>
+      <Settings />
     </div>
   );
 }
