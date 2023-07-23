@@ -1,56 +1,30 @@
 import { getActionByStrategy } from '~/lib/strategies/perfect-blackjack';
 import { useAutomationSettingsStore, useSettingsStore } from '~/stores/settingsStore';
-import { useGameMachine } from '~/lib/machines/gameMachineContext';
 import { useDealerCount } from '~/lib/hooks/useDealerCount';
 import usePlayerHand from '../hooks/usePlayerHand';
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo } from 'react';
+import { Card } from '~/lib/deck';
 
-export default function ActionControls() {
-  const { send } = useGameMachine();
-  const { hand, isCurrentTurnHand, player } = usePlayerHand();
-
-  const hit = useCallback(() => isCurrentTurnHand && send({ type: 'HIT' }), [isCurrentTurnHand, send]);
-  const double = useCallback(() => isCurrentTurnHand && send({ type: 'DOUBLE' }), [isCurrentTurnHand, send]);
-  const stand = useCallback(() => isCurrentTurnHand && send({ type: 'STAND' }), [isCurrentTurnHand, send]);
-  const split = useCallback(() => isCurrentTurnHand && send({ type: 'SPLIT' }), [isCurrentTurnHand, send]);
-
-  const { visible: visibleDealerCount } = useDealerCount();
-  const allowedToDoubleAfterSplit = useSettingsStore(state => state.allowedToDoubleAfterSplit);
-  const canDouble = hand.cards.length === 2;
-  const canSplit = hand.cards.length === 2 && hand.cards[0]!.value === hand.cards[1]!.value;
-
-  const recommendedAction = useMemo(
-    () =>
-      getActionByStrategy(
-        hand.cards.map(card => card.value),
-        visibleDealerCount.validCounts[0]!,
-        {
-          allowedToDoubleAfterSplit,
-          canDouble,
-        },
-      ) || undefined,
-    [allowedToDoubleAfterSplit, canDouble, hand.cards, visibleDealerCount.validCounts],
-  );
-  const strategy = {
-    recommendation: recommendedAction,
-    styles: 'border-4 border-orange-300 rounded',
-  };
-
+/* AutomatePlayerActionForBots */
+function useAutoPlayAction({ recommendedAction }: { recommendedAction: ReturnType<typeof useGetRecommendedAction> }) {
+  const { hand, isCurrentTurnHand, player, actions } = usePlayerHand();
+  const { hit, double, stand, split } = actions;
+  const { cards } = hand;
   const {
     isOn: automateInteractivePlayer,
     intervalWaits: { playerAction: playerActionTimeout },
   } = useAutomationSettingsStore();
 
-  /* AutomatePlayerActionForBots */
   useEffect(() => {
-    if (!isCurrentTurnHand || (player.strategy === 'interactive' && !automateInteractivePlayer)) return;
+    if (!isCurrentTurnHand) return;
+    if (player.strategy === 'interactive' && !automateInteractivePlayer) return;
     const actionMap = {
       H: hit,
       S: stand,
       D: double,
       SP: split,
     } as const;
-    const sendAction = actionMap[strategy.recommendation];
+    const sendAction = actionMap[recommendedAction];
     setTimeout(() => {
       sendAction();
     }, playerActionTimeout);
@@ -60,13 +34,44 @@ export default function ActionControls() {
     isCurrentTurnHand,
     split,
     stand,
-    strategy.recommendation,
-    hand.cards.length,
+    cards.length,
     player.strategy,
     automateInteractivePlayer,
     player.id,
     playerActionTimeout,
+    recommendedAction,
   ]);
+}
+function useGetRecommendedAction({ cards }: { cards: Card[] }) {
+  const { visible: visibleDealerCount } = useDealerCount();
+  const { allowedToDoubleAfterSplit, allowedToDouble } = useSettingsStore();
+  const recommendedAction = useMemo(
+    () =>
+      getActionByStrategy(
+        cards.map(card => card.value),
+        visibleDealerCount.validCounts[0]!,
+        {
+          allowedToDoubleAfterSplit,
+          allowedToDouble,
+        },
+      ) || undefined,
+    [allowedToDouble, allowedToDoubleAfterSplit, cards, visibleDealerCount.validCounts],
+  );
+  return recommendedAction;
+}
+export default function ActionControls() {
+  const { hand, isCurrentTurnHand, canDouble, canSplit, actions } = usePlayerHand();
+  const { hit, double, stand, split } = actions;
+  const { cards } = hand;
+
+  const recommendedAction = useGetRecommendedAction({ cards });
+
+  const strategy = {
+    recommendation: recommendedAction,
+    styles: 'border-4 border-orange-300 rounded',
+  };
+
+  useAutoPlayAction({ recommendedAction });
 
   return (
     <div className='actions flex justify-center gap-4'>
