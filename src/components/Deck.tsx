@@ -4,13 +4,13 @@ import { useGameMachine } from '~/lib/machines/gameMachineContext';
 import { useCallback, useEffect, useRef } from 'react';
 import { useIsAutomateInteractivePlayer } from '~/stores/settingsStore';
 
-const useAutoPlay = ({
+function useAutoPlay({
   handleStartGame,
   handleDealAnotherRound,
 }: {
   handleStartGame: () => void;
   handleDealAnotherRound: () => void;
-}) => {
+}) {
   const { state, canDealNextRound } = useGameMachine();
   const isOnInitGame = state.matches('Initial');
   const automateInteractivePlayer = useIsAutomateInteractivePlayer();
@@ -28,7 +28,7 @@ const useAutoPlay = ({
       else if (canDealNextRound) handleDealAnotherRound();
     }, 10);
   }, [automateInteractivePlayer, canDealNextRound, handleDealAnotherRound, handleStartGame, isOnInitGame]);
-};
+}
 
 export default function Deck() {
   const { state, send, isRoundFinished, isWaitingForBets, isShufflingAfterRound } = useGameMachine();
