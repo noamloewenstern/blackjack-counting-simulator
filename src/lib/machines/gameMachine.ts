@@ -1,4 +1,4 @@
-import { assign, choose, createMachine, fromCallback, fromPromise, log, raise } from 'xstate';
+import { pure, assign, choose, createMachine, fromCallback, fromPromise, log, raise } from 'xstate';
 import { BlackjackStrategy } from '../strategies/utils';
 import { raiseError, sleep } from '~/utils/helpers';
 import type { Card, Deck, Hand, RoundHandResult } from '../deck';
@@ -117,7 +117,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           initial: 'WaitForPlayerAction',
           states: {
             WaitForPlayerAction: {
-              entry: 'setPlayerTurn',
+              entry: ['setPlayerHandTurn', 'hitHandIfHasJust1Card', 'setFishedIfIsBlackjack'],
               on: {
                 HIT: {
                   guard: 'canHit',
@@ -146,10 +146,10 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               },
             },
             SplitHand: {
-              entry: ['splitHandToTwoHands' /* ? 'setPlayerTurn' */],
+              entry: ['splitHandToTwoHands'],
               after: {
                 [gameSettings.automation.intervalWaits.splitHand]: {
-                  actions: ['hitPlayerHand'],
+                  actions: ['setPlayerHandTurn'],
                   target: 'WaitForPlayerAction',
                 },
               },
@@ -411,21 +411,17 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               };
             }),
         }),
-        setBlackjackHandsAsFinished: assign(({ context }) => {
-          return {
-            players: context.players.map(player => {
-              const hand = {
-                ...player.hands[0]!, // only has one hand, since it's the first deal of the round
-                isFinished: isBlackjack(player.hands[0]!.cards),
-              };
-              return {
-                ...player,
-                hands: [hand],
-              };
-            }),
-          };
+        setBlackjackHandsAsFinished: assign({
+          players: ({ context }) =>
+            context.players.map(player => ({
+              ...player,
+              hands: player.hands.map(hand => ({
+                ...hand,
+                isFinished: hand.isFinished || isBlackjack(hand.cards),
+              })),
+            })),
         }),
-        setPlayerTurn: assign(({ context }) => {
+        setPlayerHandTurn: assign(({ context }) => {
           for (const [pIdx, player] of context.players.entries()) {
             for (const [hIdx, hand] of player.hands.entries()) {
               if (!hand.isFinished) {
@@ -435,7 +431,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               }
             }
           }
-          console.error('No player hand found');
+          console.error('No player hand found', context);
           throw new Error('No player hand found');
         }),
         splitHandToTwoHands: assign(({ context }) => {
@@ -459,6 +455,21 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               balance: player.balance - hand.bet,
             }),
           };
+        }),
+        hitHandIfHasJust1Card: pure(({ context }) => {
+          const { playerIdx, player, hand, handIdx } = getCurrentTurnHand(context);
+          if (hand.cards.length === 1) {
+            // meaning: is the following hand after split
+            return ['hitPlayerHand'];
+          }
+          return [];
+        }),
+        setFishedIfIsBlackjack: pure(({ context }) => {
+          const { playerIdx, player, hand, handIdx } = getCurrentTurnHand(context);
+          if (isBlackjack(hand.cards)) {
+            return ['setHandAsFinished'];
+          }
+          return [];
         }),
         setPlayerBet: assign(({ context, event }) => {
           if (event.type !== 'PLACE_BET') raiseError('Wrong event type');
