@@ -46,7 +46,10 @@ export const HardTotalAction: Record<string, readonly HardTotalAction[]> = {
   '9': ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
   '8': ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
 } as const;
-export function isSoftHand(cards: Card['value'][], { validCounts }: { validCounts: number[] }): boolean {
+export function isSoftHand(cards: Card['value'][], { validCounts }: { validCounts?: number[] } = {}): boolean {
+  if (!validCounts) {
+    validCounts = calcHandCount(cards).validCounts;
+  }
   if (!cards.some(card => card === 'A')) return false;
   if (validCounts.length > 1) {
     if (!SoftTotalStrategy[validCounts[0]!]) {
