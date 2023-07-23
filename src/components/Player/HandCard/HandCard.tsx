@@ -7,19 +7,25 @@ import EndGameMessage from './EndGameMessage';
 import Card from '~/components/Card';
 
 export default function HandCard() {
-  const { send, isRoundFinished, isWaitingForBets, isPlayersTurn } = useGameMachine();
-  const { isCurrentTurnHand, isBlackjack, didBust, counts, finalCount, hand } = usePlayerHand();
+  const { isRoundFinished, isWaitingForBets, isPlayersTurn } = useGameMachine();
+  const {
+    isCurrentTurnHand,
+    isBlackjack,
+    didBust,
+    counts,
+    finalCount,
+    player,
+    hand,
+    actions: { stand },
+  } = usePlayerHand();
 
   useEffect(() => {
-    if (isCurrentTurnHand && isBlackjack) {
-      send({ type: 'STAND' });
+    if (!isCurrentTurnHand) return;
+    if (isBlackjack || didBust) {
+      stand();
     }
-    if (didBust) {
-      // may add stuff, so separating the logic
-      send({ type: 'STAND' });
-    }
-  }, [didBust, isBlackjack, isCurrentTurnHand, send]);
-  const countMsg = didBust ? `${finalCount} BUST` : hand.isFinished ? finalCount : counts.join(' | ');
+  }, [didBust, hand.id, isBlackjack, isCurrentTurnHand, player.id, stand]);
+  const countMsg = hand.isFinished ? finalCount : counts.join(' | ');
   return (
     <div>
       {counts.length > 0 && (
@@ -27,7 +33,7 @@ export default function HandCard() {
           {`Count: `}
           <span className={`text-xl font-bold ${didBust ? 'text-red-700' : 'text-green-600'}`}>
             {countMsg}
-            {isRoundFinished && <EndGameMessage hand={hand} />}
+            {(isRoundFinished || didBust || isBlackjack) && <EndGameMessage />}
           </span>
         </h3>
       )}

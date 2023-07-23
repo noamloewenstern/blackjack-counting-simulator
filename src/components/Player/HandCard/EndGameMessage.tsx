@@ -1,18 +1,11 @@
-import { useMemo } from 'react';
-import { calcHandCount } from '~/lib/calculateHand';
-import { Hand } from '~/lib/deck';
 import { useDealerCount } from '~/lib/hooks/useDealerCount';
-import { isHandBlackjack } from '~/lib/machines/utils';
+import usePlayerHand from '../hooks/usePlayerHand';
 
-export default function EndGameMessage({ hand }: { hand: Hand }) {
-  const hasBlackjack = isHandBlackjack(hand.cards);
+export default function EndGameMessage() {
+  const { isBlackjack, didBust, finalCount } = usePlayerHand();
   const { includeNonVisible: dealerCount } = useDealerCount();
 
-  const { bustCount, validCounts } = useMemo(() => calcHandCount(hand.cards), [hand.cards]);
-  const isBust = validCounts.length === 0 && bustCount > 21;
-  const finalCount = validCounts.length > 0 ? validCounts[0]! : bustCount;
-
-  if (hasBlackjack) {
+  if (isBlackjack) {
     return (
       <>
         <span className='text-green-500 border border-green-500 rounded ml-4 px-2 py-0.5'>Blackjack!</span>
@@ -24,8 +17,8 @@ export default function EndGameMessage({ hand }: { hand: Hand }) {
       </>
     );
   }
-  if (dealerCount.isBlackjack || isBust || (finalCount < dealerCount.finalCount && !dealerCount.didBust)) {
-    return <span className='text-red-500 ml-4'>Lose</span>;
+  if (dealerCount.isBlackjack || didBust || (finalCount < dealerCount.finalCount && !dealerCount.didBust)) {
+    return <span className='text-red-500 ml-4'>{didBust ? `BUST ` : ''} Lose</span>;
   }
   if (finalCount === dealerCount.finalCount) {
     return <span className='text-yellow-500 ml-4'>Push</span>;
