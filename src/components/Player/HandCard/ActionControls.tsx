@@ -1,5 +1,5 @@
 import { getActionByStrategy } from '~/lib/strategies/perfect-blackjack';
-import { useSettingsStore } from '~/stores/settingsStore';
+import { useAutomationSettingsStore, useSettingsStore } from '~/stores/settingsStore';
 import { useGameMachine } from '~/lib/machines/gameMachineContext';
 import { useDealerCount } from '~/lib/hooks/useDealerCount';
 import usePlayerHand from '../hooks/usePlayerHand';
@@ -15,22 +15,31 @@ export default function ActionControls() {
   const split = useCallback(() => isCurrentTurnHand && send({ type: 'SPLIT' }), [isCurrentTurnHand, send]);
 
   const { visible: visibleDealerCount } = useDealerCount();
-  const { allowedToDoubleAfterSplit, automateInteractivePlayer } = useSettingsStore();
+  const allowedToDoubleAfterSplit = useSettingsStore(state => state.allowedToDoubleAfterSplit);
   const canDouble = hand.cards.length === 2;
   const canSplit = hand.cards.length === 2 && hand.cards[0]!.value === hand.cards[1]!.value;
 
   const recommendedAction = useMemo(
     () =>
-      getActionByStrategy(hand.cards, visibleDealerCount.validCounts[0]!, {
-        allowedToDoubleAfterSplit,
-        canDouble,
-      }) || undefined,
+      getActionByStrategy(
+        hand.cards.map(card => card.value),
+        visibleDealerCount.validCounts[0]!,
+        {
+          allowedToDoubleAfterSplit,
+          canDouble,
+        },
+      ) || undefined,
     [allowedToDoubleAfterSplit, canDouble, hand.cards, visibleDealerCount.validCounts],
   );
   const strategy = {
     recommendation: recommendedAction,
     styles: 'border-4 border-orange-300 rounded',
   };
+
+  const {
+    isOn: automateInteractivePlayer,
+    intervalWaits: { playerAction: playerActionTimeout },
+  } = useAutomationSettingsStore();
 
   /* AutomatePlayerActionForBots */
   useEffect(() => {
@@ -44,7 +53,7 @@ export default function ActionControls() {
     const sendAction = actionMap[strategy.recommendation];
     setTimeout(() => {
       sendAction();
-    }, 300);
+    }, playerActionTimeout);
   }, [
     double,
     hit,
@@ -56,6 +65,7 @@ export default function ActionControls() {
     player.strategy,
     automateInteractivePlayer,
     player.id,
+    playerActionTimeout,
   ]);
 
   return (
