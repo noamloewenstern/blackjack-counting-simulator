@@ -9,7 +9,7 @@ export default function PlayerCard() {
   return (
     <div className='player border border-gray-500 rounded p-4 shadow-lg flex flex-col items-center gap-2 w-1/3'>
       <PlayerHeader player={player} />
-      <div className='flex gap-x-20'>
+      <div className='flex gap-x-20 flex-wrap'>
         {player.hands.map(hand => (
           <HandProvider hand={hand} key={hand.id}>
             <HandCard />
