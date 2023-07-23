@@ -46,18 +46,12 @@ export const HardTotalAction: Record<string, readonly HardTotalAction[]> = {
   '9': ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
   '8': ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
 } as const;
-export function isSoftHand(cards: Card['value'][], { validCounts }: { validCounts?: number[] } = {}): boolean {
-  if (!validCounts) {
-    validCounts = calcHandCount(cards).validCounts;
-  }
-  if (!cards.some(card => card === 'A')) return false;
-  if (validCounts.length > 1) {
-    if (!SoftTotalStrategy[validCounts[0]!]) {
-      raiseError(`Invalid playerTotal:${validCounts[0]} and dealerCount:${validCounts[1]} for soft hand`);
-    }
-    return true;
-  }
-  return false;
+export function isSoftHand(
+  cards: Card['value'][],
+  { validCounts: origValidCounts }: { validCounts?: number[] } = {},
+): boolean {
+  const validCounts = origValidCounts || calcHandCount(cards).validCounts;
+  return cards.some(card => card === 'A') && cards.length > 1 && validCounts.length > 1;
 }
 export function getSoftAction({
   playerCards,
@@ -71,6 +65,9 @@ export function getSoftAction({
   validCounts: number[];
 }): HardTotalAction {
   const higherSoftCount = validCounts[0] || 0;
+  if (!higherSoftCount) {
+    raiseError(`Invalid playerTotal:${higherSoftCount} and dealerCount:${dealerCount} for soft hand - IS BUST`);
+  }
   const softCountAction = SoftTotalStrategy[higherSoftCount]?.[dealerCount - 2];
   if (!softCountAction) {
     raiseError(`Invalid playerTotal:${higherSoftCount} and dealerCount:${dealerCount} for soft hand`);
@@ -122,7 +119,11 @@ function getHardAction({
 }): HardTotalAction {
   const playerTotal = validCounts[0];
   if (!playerTotal) {
-    raiseError(`Invalid playerTotal:${playerTotal} and dealerCount:${dealerCount} for hard hand - IS BUST`);
+    raiseError(
+      `Invalid playerTotal:${playerTotal} and dealerCount:${dealerCount} for hard hand - IS BUST playerCards:${playerCards.join(
+        ',',
+      )}`,
+    );
   }
   if (playerTotal >= 17) {
     return 'S';
@@ -133,7 +134,11 @@ function getHardAction({
 
   const action = HardTotalAction[playerTotal]?.[dealerCount - 2];
   if (!action) {
-    raiseError(`Invalid playerTotal:${playerTotal} and dealerCount:${dealerCount} for hard hand`);
+    raiseError(
+      `Invalid playerTotal:${playerTotal} and dealerCount:${dealerCount} for hard hand. playerCards:${playerCards.join(
+        ',',
+      )}`,
+    );
   }
   const canDouble = allowedToDouble && playerCards.length === 2;
   if (action === 'D' && !canDouble) {
@@ -148,6 +153,7 @@ export function getActionByStrategy(
   dealerCount: number,
   settings: ActionSettings,
 ): Action {
+  playerCards.length === 0 && raiseError(`getActionByStrategy: playerCards length is 0!`);
   // Ensure playerTotal and dealerCard are in the valid range
   if (dealerCount < 2 || dealerCount > 11) {
     raiseError(`Invalid dealerCount value: ${dealerCount}`);
