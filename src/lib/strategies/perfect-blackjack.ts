@@ -8,7 +8,7 @@ type HardTotalAction = 'H' | 'S' | 'D'; // H: Hit, S: Stand, D: Double if allowe
 type Action = 'H' | 'S' | 'D' | 'SP'; // H: Hit, S: Stand, D: Double, SP: Split
 
 export type ActionSettings = {
-  canDouble: boolean;
+  allowedToDouble: boolean;
   allowedToDoubleAfterSplit: boolean;
 };
 
@@ -77,14 +77,14 @@ export function getSoftAction({
 function isPairHand(playerHand: Card['value'][]): boolean {
   return playerHand.length === 2 && playerHand[0] !== undefined && playerHand[0] === playerHand[1];
 }
-function getSplitAction(
+export function getSplitAction(
   playerHand: Card['value'][],
   dealerCount: number,
   { canDoubleAfterSplit = true } = {},
 ): 'Y' | 'N' {
   // Pair splitting
   if (!playerHand[0]) raiseError(`Invalid playerHand:${playerHand} and dealerCount:${dealerCount} for pair hand`);
-  let pair = playerHand[0] as string;
+  let pair = playerHand[0];
   if (['10', 'J', 'Q', 'K'].includes(pair)) {
     pair = 'T';
   }
@@ -148,7 +148,7 @@ export function getActionByStrategy(
   if (
     isPairHand(playerCards) &&
     getSplitAction(playerCards, dealerCount, {
-      canDoubleAfterSplit: settings.canDouble && settings.allowedToDoubleAfterSplit,
+      canDoubleAfterSplit: settings.allowedToDouble && settings.allowedToDoubleAfterSplit,
     }) === 'Y'
   ) {
     return 'SP';
@@ -163,12 +163,12 @@ export function getActionByStrategy(
     return 'S';
   }
   if (isSoftHand(playerCards)) {
-    const action = getSoftAction({ playerCards, dealerCount, validCounts, canDouble: settings.canDouble });
+    const action = getSoftAction({ playerCards, dealerCount, validCounts, canDouble: settings.allowedToDouble });
     return action;
   }
 
   // hard hand
-  const action = getHardAction({ playerCards, dealerCount, validCounts, canDouble: settings.canDouble });
+  const action = getHardAction({ playerCards, dealerCount, validCounts, canDouble: settings.allowedToDouble });
   return action;
 }
 
