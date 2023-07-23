@@ -9,7 +9,7 @@ import Card from '~/components/Card';
 export default function HandCard() {
   const { isRoundFinished, isWaitingForBets, isPlayersTurn } = useGameMachine();
   const {
-    isCurrentTurnHand,
+    isHandCurrentTurn,
     isBlackjack,
     didBust,
     counts,
@@ -20,11 +20,11 @@ export default function HandCard() {
   } = usePlayerHand();
 
   useEffect(() => {
-    if (!isCurrentTurnHand) return;
+    if (!isHandCurrentTurn) return;
     if (isBlackjack || didBust) {
       stand();
     }
-  }, [didBust, hand.id, isBlackjack, isCurrentTurnHand, player.id, stand]);
+  }, [didBust, hand.id, isBlackjack, isHandCurrentTurn, player.id, stand]);
   const countMsg = hand.isFinished ? finalCount : counts.join(' | ');
   return (
     <div>

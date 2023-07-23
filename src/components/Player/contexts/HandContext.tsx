@@ -10,7 +10,7 @@ export const HandContext = createContext<IHandContextState>({} as never);
 
 function useGetCalculateHandContext({ hand }: ProviderProps) {
   const { send } = useGameMachine();
-  const { player, currentTurnInfo, isCurrentTurn } = usePlayer();
+  const { player, isCurrentTurn, currentTurnInfo } = usePlayer();
   const { cards } = hand;
   const { counts, finalCount, didBust, isBlackjack } = useMemo(() => {
     return cards.length > 0
@@ -24,24 +24,24 @@ function useGetCalculateHandContext({ hand }: ProviderProps) {
   }, [cards]);
   const { allowedToDouble } = useSettingsStore();
 
-  const isCurrentTurnHand = currentTurnInfo?.hand.id === hand.id;
+  const isHandCurrentTurn = isCurrentTurn && currentTurnInfo!.hand.id === hand.id;
   const canDouble = useMemo(() => allowedToDouble && cards.length === 2, [allowedToDouble, cards.length]);
   const canSplit = useMemo(() => cards.length === 2 && cards[0]!.value === cards[1]!.value, [cards]);
 
-  const hit = useCallback(() => isCurrentTurnHand && send({ type: 'HIT' }), [isCurrentTurnHand, send]);
+  const hit = useCallback(() => isHandCurrentTurn && send({ type: 'HIT' }), [isHandCurrentTurn, send]);
   const double = useCallback(
-    () => isCurrentTurnHand && canDouble && send({ type: 'DOUBLE' }),
-    [canDouble, isCurrentTurnHand, send],
+    () => isHandCurrentTurn && canDouble && send({ type: 'DOUBLE' }),
+    [canDouble, isHandCurrentTurn, send],
   );
-  const stand = useCallback(() => isCurrentTurnHand && send({ type: 'STAND' }), [isCurrentTurnHand, send]);
-  const split = useCallback(() => isCurrentTurnHand && send({ type: 'SPLIT' }), [isCurrentTurnHand, send]);
+  const stand = useCallback(() => isHandCurrentTurn && send({ type: 'STAND' }), [isHandCurrentTurn, send]);
+  const split = useCallback(() => isHandCurrentTurn && send({ type: 'SPLIT' }), [isHandCurrentTurn, send]);
 
   const handState = {
     player,
     hand,
-    isCurrentPlayerTurn: isCurrentTurn,
     currentTurnInfo,
-    isCurrentTurnHand,
+    isPlayerCurrentTurn: isCurrentTurn,
+    isHandCurrentTurn,
     counts,
     finalCount,
     didBust,

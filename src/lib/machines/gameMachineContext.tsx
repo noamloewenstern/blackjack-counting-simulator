@@ -93,7 +93,6 @@ function useGameMachineContext() {
     // logger: msg => console.log(msg),
   });
   const sendWithLog = (event: Parameters<typeof send>[0]) => {
-    console.debug('send', event);
     send(event);
   };
 
