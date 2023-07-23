@@ -7,7 +7,7 @@ import { Card } from '~/lib/deck';
 
 /* AutomatePlayerActionForBots */
 function useAutoPlayAction({ recommendedAction }: { recommendedAction: ReturnType<typeof useGetRecommendedAction> }) {
-  const { isHandCurrentTurn, player, actions } = usePlayerHand();
+  const { isHandCurrentTurn, player, actions, hand } = usePlayerHand();
   const { hit, double, stand, split } = actions;
   const {
     isOn: automateInteractivePlayer,
@@ -21,13 +21,25 @@ function useAutoPlayAction({ recommendedAction }: { recommendedAction: ReturnTyp
     SP: split,
   } as const;
   const sendAction = actionMap[recommendedAction];
+  const _assureEffectTriggeredWhenNumberCardsChange = hand.cards.length;
+
   useEffect(() => {
     if (!isHandCurrentTurn) return;
     if (player.strategy === 'interactive' && !automateInteractivePlayer) return;
+
+    _assureEffectTriggeredWhenNumberCardsChange; // don't remove
     setTimeout(() => {
       sendAction();
     }, playerActionTimeout);
-  }, [automateInteractivePlayer, isHandCurrentTurn, player.id, player.strategy, playerActionTimeout, sendAction]);
+  }, [
+    automateInteractivePlayer,
+    isHandCurrentTurn,
+    player.id,
+    player.strategy,
+    playerActionTimeout,
+    sendAction,
+    _assureEffectTriggeredWhenNumberCardsChange,
+  ]);
 }
 function useGetRecommendedAction({ cards }: { cards: Card[] }) {
   const { visible: visibleDealerCount } = useDealerCount();
