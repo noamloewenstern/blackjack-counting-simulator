@@ -1,2 +1,1 @@
-export const IS_DEBUG = true;
-export const IS_TESTING = true;
+export const DEBUG = !!import.meta.env.VITE_DEBUG;
