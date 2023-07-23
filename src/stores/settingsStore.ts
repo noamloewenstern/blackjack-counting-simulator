@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
+import { persist } from 'zustand/middleware';
+import deepMerge from 'deepmerge';
 
 export type AutomateStore = {
   isOn: boolean;
@@ -12,6 +14,7 @@ export type AutomateStore = {
     hitPlayer: number;
     playerAction: number;
   };
+  setIntervalWaits: (intervalWaits: Partial<AutomateStore['intervalWaits']>) => void;
 };
 export type SettingsStore = {
   numberDecksInShoe: number;
@@ -24,30 +27,43 @@ type Actions = {
 };
 
 export const useSettingsStore = create(
-  immer<SettingsStore & Actions>(set => ({
-    numberDecksInShoe: 4,
-    dealerMustHitOnSoft17: true,
-    allowedToDoubleAfterSplit: true,
-    allowedToDouble: true,
+  persist(
+    immer<SettingsStore & Actions>(set => ({
+      numberDecksInShoe: 6,
+      dealerMustHitOnSoft17: true,
+      allowedToDoubleAfterSplit: true,
+      allowedToDouble: true,
 
-    setNumberOfDecks: (numberOfDecks: number) => set({ numberDecksInShoe: numberOfDecks }),
-  })),
+      setNumberOfDecks: (numberOfDecks: number) => set({ numberDecksInShoe: numberOfDecks }),
+    })),
+    {
+      name: 'settings',
+    },
+  ),
 );
 
 export const useAutomationSettingsStore = create(
-  immer<AutomateStore>(set => ({
-    isOn: false,
-    // isOn: true,
-    toggle: () => set(state => ({ isOn: !state.isOn })),
-    intervalWaits: {
-      betweenPlays: 1000,
-      shuffleDeckBeforeNextDeal: 1000,
-      splitHand: 400,
-      hitDealer: 400,
-      hitPlayer: 400,
-      playerAction: 400,
+  persist(
+    immer<AutomateStore>(set => ({
+      isOn: false,
+      toggle: () => set(state => ({ isOn: !state.isOn })),
+      intervalWaits: {
+        betweenPlays: 1000,
+        shuffleDeckBeforeNextDeal: 1000,
+        splitHand: 400,
+        hitDealer: 400,
+        hitPlayer: 400,
+        playerAction: 400,
+      },
+      setIntervalWaits: (intervalWaits: Partial<AutomateStore['intervalWaits']>) =>
+        set(state => ({ intervalWaits: { ...state.intervalWaits, ...intervalWaits } })),
+    })),
+    {
+      name: 'automate-settings',
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      merge: (persistedState, currentState) => deepMerge(currentState, persistedState as any),
     },
-  })),
+  ),
 );
 
 export const useIsAutomateInteractivePlayer = () => useAutomationSettingsStore(state => state.isOn);
