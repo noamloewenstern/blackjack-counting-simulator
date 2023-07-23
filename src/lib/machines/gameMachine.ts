@@ -5,6 +5,7 @@ import type { Card, Deck, Hand, RoundHandResult } from '../deck';
 import { calcHandCount, isBlackjack } from '../calculateHand';
 import { calcHandInfo, calcHandRoundResult, dealerHasFinalHand } from './utils';
 import { doesShoeNeedShuffle } from '~/utils/gameRules';
+import { AutomateStore, SettingsStore } from '~/stores/settingsStore';
 
 export type Player = {
   id: string;
@@ -26,30 +27,23 @@ type Context = {
   playerHandTurn?: 'dealer' | `${PlayerIdx}.${HandIdx}`;
   roundsPlayed: number;
 };
-type GameSettings = {
-  numberDecksInShoe: number;
-  dealerMustHitOnSoft17: boolean;
-  allowedToDoubleAfterSplit: boolean;
-};
-export function getCurrentTurnHand({ players, playerHandTurn }: Pick<Context, 'players' | 'playerHandTurn'>) {
-  if (!playerHandTurn) raiseError('No player hand turn');
-  const [playerIdx, handIdx] = playerHandTurn.split('.').map(Number).filter(Number.isInteger);
-  if (playerIdx === undefined || handIdx === undefined) raiseError(`Wrong player hand turn: ${playerHandTurn}`);
-  const player = players[playerIdx]!;
-  const hand = player.hands[handIdx]!;
-  return { player, hand, playerIdx, handIdx };
-}
-type MachineProps = {
+
+type NewType = {
   deck: {
     initDeck: () => void;
     shuffleDeck: () => void;
     drawCard: (opts?: { visible?: boolean }) => Card;
     shoe: Deck;
   };
-  gameSettings: GameSettings;
+  gameSettings: SettingsStore & {
+    automation: AutomateStore;
+  };
   initContext: Context;
   updateRunningCount: (card: Card) => void;
 };
+
+type MachineProps = NewType;
+
 type hitPlayerHandParams = {
   playerIdx: number;
   handIdx: number;
@@ -154,7 +148,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             SplitHand: {
               entry: ['splitHandToTwoHands' /* ? 'setPlayerTurn' */],
               after: {
-                400: {
+                [gameSettings.automation.intervalWaits.splitHand]: {
                   actions: ['hitPlayerHand'],
                   target: 'WaitForPlayerAction',
                 },
@@ -163,7 +157,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             FinishedPlayerAction: {
               entry: 'setHandAsFinished',
               after: {
-                50: [
+                0: [
                   {
                     guard: 'isLastPlayedHand',
                     target: 'NoMorePlayerActions',
@@ -190,7 +184,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             input: ({ context }: { context: Context }) => context.dealer.hand.cards[0]!,
           },
           after: {
-            400: [
+            [gameSettings.automation.intervalWaits.hitDealer]: [
               {
                 target: 'FinalizeRound',
                 guard: 'dealerHasFinalHand',
@@ -219,7 +213,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           states: {
             WaitForEventToStartNewRound: {
               after: {
-                300: {
+                0: {
                   target: 'ShuffleDeckBeforeNextDeal',
                   guard: 'doesDeckNeedToBeShuffled',
                 },
@@ -236,7 +230,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             },
             ShuffleDeckBeforeNextDeal: {
               after: {
-                1000: {
+                [gameSettings.automation.intervalWaits.shuffleDeckBeforeNextDeal]: {
                   target: 'WaitForEventToStartNewRound',
                 },
               },
@@ -533,7 +527,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           const { playersIdxs } = input as { playersIdxs: number[] };
           const dealToPlayers = async () => {
             for (const playerIdx of playersIdxs) {
-              await sleep(300);
+              await sleep(gameSettings.automation.intervalWaits.hitPlayer);
               sendBack({
                 type: 'HIT_PLAYER',
                 params: {
@@ -544,14 +538,14 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             }
           };
           const dealToDealer = async () => {
-            await sleep(300);
+            await sleep(gameSettings.automation.intervalWaits.hitPlayer);
             sendBack({ type: 'HIT_DEALER' });
           };
           await dealToPlayers();
           await dealToDealer();
           await dealToPlayers();
           await dealToDealer();
-          await sleep(300);
+          await sleep(gameSettings.automation.intervalWaits.betweenPlays);
           sendBack({ type: 'FINISHED_DEALING_INIT_CARDS' });
         }),
       },
@@ -614,3 +608,12 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
       },
     },
   );
+
+export function getCurrentTurnHand({ players, playerHandTurn }: Pick<Context, 'players' | 'playerHandTurn'>) {
+  if (!playerHandTurn) raiseError('No player hand turn');
+  const [playerIdx, handIdx] = playerHandTurn.split('.').map(Number).filter(Number.isInteger);
+  if (playerIdx === undefined || handIdx === undefined) raiseError(`Wrong player hand turn: ${playerHandTurn}`);
+  const player = players[playerIdx]!;
+  const hand = player.hands[handIdx]!;
+  return { player, hand, playerIdx, handIdx };
+}

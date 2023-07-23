@@ -7,7 +7,7 @@ type SoftTotalAction = 'H' | 'S' | 'D' | 'Ds'; // H: Hit, S: Stand, D: Double if
 type HardTotalAction = 'H' | 'S' | 'D'; // H: Hit, S: Stand, D: Double if allowed otherwise hit
 type Action = 'H' | 'S' | 'D' | 'SP'; // H: Hit, S: Stand, D: Double, SP: Split
 
-type ActionSettings = {
+export type ActionSettings = {
   canDouble: boolean;
   allowedToDoubleAfterSplit: boolean;
 };
@@ -46,17 +46,17 @@ export const HardTotalAction: Record<string, readonly HardTotalAction[]> = {
   '9': ['H', 'D', 'D', 'D', 'D', 'H', 'H', 'H', 'H', 'H'],
   '8': ['H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H', 'H'],
 } as const;
-function isSoftHand(playerHand: Card[]): boolean {
-  const { validCounts } = calcHandCount(playerHand);
-  return playerHand.some(card => card.value === 'A') && validCounts.length > 1 && !!SoftTotalStrategy[validCounts[0]!];
+export function isSoftHand(cards: Card['value'][]): boolean {
+  const { validCounts } = calcHandCount(cards);
+  return cards.some(card => card === 'A') && validCounts.length > 1 && !!SoftTotalStrategy[validCounts[0]!];
 }
-function getSoftAction({
-  playerHand,
+export function getSoftAction({
+  playerCards,
   dealerCount,
   validCounts,
   canDouble,
 }: {
-  playerHand: Card[];
+  playerCards: Card['value'][];
   dealerCount: number;
   canDouble: boolean;
   validCounts: number[];
@@ -74,13 +74,17 @@ function getSoftAction({
   const hardAction = action === 'Ds' ? (canDouble ? 'D' : 'S') : action;
   return hardAction;
 }
-function isPairHand(playerHand: Card[]): boolean {
-  return playerHand.length === 2 && playerHand[0]!.value === playerHand[1]!.value;
+function isPairHand(playerHand: Card['value'][]): boolean {
+  return playerHand.length === 2 && playerHand[0] !== undefined && playerHand[0] === playerHand[1];
 }
-function getSplitAction(playerHand: Card[], dealerCount: number, { canDoubleAfterSplit = true } = {}): 'Y' | 'N' {
+function getSplitAction(
+  playerHand: Card['value'][],
+  dealerCount: number,
+  { canDoubleAfterSplit = true } = {},
+): 'Y' | 'N' {
   // Pair splitting
   if (!playerHand[0]) raiseError(`Invalid playerHand:${playerHand} and dealerCount:${dealerCount} for pair hand`);
-  let pair = playerHand[0].value as string;
+  let pair = playerHand[0] as string;
   if (['10', 'J', 'Q', 'K'].includes(pair)) {
     pair = 'T';
   }
@@ -96,12 +100,12 @@ function getSplitAction(playerHand: Card[], dealerCount: number, { canDoubleAfte
 }
 
 function getHardAction({
-  playerHand,
+  playerCards,
   dealerCount,
   validCounts,
   canDouble,
 }: {
-  playerHand: Card[];
+  playerCards: Card['value'][];
   dealerCount: number;
   validCounts: number[];
   canDouble: boolean;
@@ -129,24 +133,28 @@ function getHardAction({
 }
 
 /* CALC ACTION */
-export function getActionByStrategy(playerHand: Card[], dealerCount: number, settings: ActionSettings): Action {
+export function getActionByStrategy(
+  playerCards: Card['value'][],
+  dealerCount: number,
+  settings: ActionSettings,
+): Action {
   // Ensure playerTotal and dealerCard are in the valid range
   if (dealerCount < 2 || dealerCount > 11) {
     throw new Error(`Invalid dealerCount value: ${dealerCount}`);
   }
-  if (isBlackjack(playerHand)) {
+  if (isBlackjack(playerCards)) {
     return 'S';
   }
   if (
-    isPairHand(playerHand) &&
-    getSplitAction(playerHand, dealerCount, {
+    isPairHand(playerCards) &&
+    getSplitAction(playerCards, dealerCount, {
       canDoubleAfterSplit: settings.canDouble && settings.allowedToDoubleAfterSplit,
     }) === 'Y'
   ) {
     return 'SP';
   }
 
-  const { validCounts } = calcHandCount(playerHand);
+  const { validCounts } = calcHandCount(playerCards);
   if (
     validCounts.length === 0 ||
     validCounts[0] === 20 /* includes soft 20 */ ||
@@ -154,13 +162,13 @@ export function getActionByStrategy(playerHand: Card[], dealerCount: number, set
   ) {
     return 'S';
   }
-  if (isSoftHand(playerHand)) {
-    const action = getSoftAction({ playerHand, dealerCount, validCounts, canDouble: settings.canDouble });
+  if (isSoftHand(playerCards)) {
+    const action = getSoftAction({ playerCards, dealerCount, validCounts, canDouble: settings.canDouble });
     return action;
   }
 
   // hard hand
-  const action = getHardAction({ playerHand, dealerCount, validCounts, canDouble: settings.canDouble });
+  const action = getHardAction({ playerCards, dealerCount, validCounts, canDouble: settings.canDouble });
   return action;
 }
 

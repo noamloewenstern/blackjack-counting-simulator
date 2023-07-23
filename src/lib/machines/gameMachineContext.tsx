@@ -1,9 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useActor } from '@xstate/react';
-import { createContext, useContext, useEffect, useMemo } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { Player, createGameMachine } from './gameMachine';
 import { useDeckStore } from '~/stores/deckStore';
-import { useSettingsStore } from '~/stores/settingsStore';
+import { useAutomationSettingsStore, useSettingsStore } from '~/stores/settingsStore';
 import { useRunningCount } from '~/stores/countStore';
 
 type Context = ReturnType<typeof useGameMachineContext>;
@@ -22,7 +22,7 @@ const initPlayers: Player[] = [
         isReady: false,
       },
     ],
-    balance: 10_000,
+    balance: 50_000,
     strategy: 'interactive',
   },
   {
@@ -37,7 +37,7 @@ const initPlayers: Player[] = [
         isReady: false,
       },
     ],
-    balance: 10_000,
+    balance: 50_000,
     strategy: 'perfect-blackjack',
   },
   {
@@ -52,12 +52,13 @@ const initPlayers: Player[] = [
         isReady: false,
       },
     ],
-    balance: 10_000,
+    balance: 50_000,
     strategy: 'counting',
   },
 ];
 function useGameMachineContext() {
   const gameSettings = useSettingsStore();
+  const automationSettings = useAutomationSettingsStore();
   const { drawCard, shuffle, shoe } = useDeckStore();
   const { updateCount } = useRunningCount();
   const gameMachine = createGameMachine({
@@ -67,7 +68,10 @@ function useGameMachineContext() {
       shuffleDeck: () => shuffle(),
       shoe,
     },
-    gameSettings: gameSettings,
+    gameSettings: {
+      ...gameSettings,
+      automation: automationSettings,
+    },
     initContext: {
       dealer: {
         id: 'dealer',
@@ -100,6 +104,7 @@ function useGameMachineContext() {
   const isShufflingAfterRound = state.matches('FinalizeRound.ShuffleDeckBeforeNextDeal');
 
   const isRoundFinished = state.matches('FinalizeRound') || isShufflingAfterRound;
+  const canDealNextRound = isRoundFinished && state.can({ type: 'DEAL_ANOTHER_ROUND' });
   const isPlayersTurn = state.matches('PlayersTurn');
   const isWaitingForBets = state.matches('PlacePlayerBets');
 
@@ -110,6 +115,7 @@ function useGameMachineContext() {
     service,
     allPlayersSetBets,
     isRoundFinished,
+    canDealNextRound,
     isShufflingAfterRound,
     isPlayersTurn,
     isWaitingForBets,

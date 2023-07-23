@@ -1,42 +1,51 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
-type AutomatePlay = {
+
+export type AutomateStore = {
   isOn: boolean;
   toggle: () => void;
-  intervalWaitBetweenPlays: number;
-  setIntervalWaitBetweenPlays: (interval: number) => void;
+  intervalWaits: {
+    betweenPlays: number;
+    shuffleDeckBeforeNextDeal: number;
+    splitHand: number;
+    hitDealer: number;
+    hitPlayer: number;
+    playerAction: number;
+  };
 };
-type DeckStore = {
+export type SettingsStore = {
   numberDecksInShoe: number;
   dealerMustHitOnSoft17: boolean;
   allowedToDoubleAfterSplit: boolean;
-
-  automateInteractivePlayer: boolean;
-  autoPlay: AutomatePlay;
 };
 type Actions = {
   setNumberOfDecks: (numberOfDecks: number) => void;
-  toggleAutomateInteractivePlayer: () => void;
 };
 
 export const useSettingsStore = create(
-  immer<DeckStore & Actions>(set => ({
+  immer<SettingsStore & Actions>(set => ({
     numberDecksInShoe: 4,
     dealerMustHitOnSoft17: true,
     allowedToDoubleAfterSplit: true,
 
-    // automateInteractivePlayer: true,
-    automateInteractivePlayer: false,
-    autoPlay: {
-      isOn: false,
-      toggle: () => set(state => ({ autoPlay: { ...state.autoPlay, automatePlay: !state.autoPlay.isOn } })),
-      intervalWaitBetweenPlays: 1000,
-      setIntervalWaitBetweenPlays: (interval: number) =>
-        set(state => ({ autoPlay: { ...state.autoPlay, intervalWaitBetweenPlays: interval } })),
-    },
-
     setNumberOfDecks: (numberOfDecks: number) => set({ numberDecksInShoe: numberOfDecks }),
-    toggleAutomateInteractivePlayer: () =>
-      set(state => ({ automateInteractivePlayer: !state.automateInteractivePlayer })),
   })),
 );
+
+export const useAutomationSettingsStore = create(
+  immer<AutomateStore>(set => ({
+    isOn: false,
+    // isOn: true,
+    toggle: () => set(state => ({ isOn: !state.isOn })),
+    intervalWaits: {
+      betweenPlays: 1000,
+      shuffleDeckBeforeNextDeal: 1000,
+      splitHand: 400,
+      hitDealer: 400,
+      hitPlayer: 400,
+      playerAction: 400,
+    },
+  })),
+);
+
+export const useIsAutomateInteractivePlayer = () => useAutomationSettingsStore(state => state.isOn);

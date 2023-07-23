@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { calculateCountingBet } from '~/lib/strategies/blackjack-counting';
 import { useRunningCount } from '~/stores/countStore';
-import { useSettingsStore } from '~/stores/settingsStore';
+import { useAutomationSettingsStore, useSettingsStore } from '~/stores/settingsStore';
 import { useGameMachine } from '~/lib/machines/gameMachineContext';
 import { calculateBetPerfectBlackjack } from '~/lib/strategies/perfect-blackjack';
 import usePlayer from '../hooks/usePlayer';
@@ -11,7 +11,13 @@ const useAutomateBetForCountingBots = ({ isReady, setIsReady }: { isReady: boole
   const { send } = useGameMachine();
   const { player } = usePlayerHand();
   const runningCount = useRunningCount(state => state.runningCount);
-  const { numberDecksInShoe, automateInteractivePlayer } = useSettingsStore();
+  const numberDecksInShoe = useSettingsStore(state => state.numberDecksInShoe);
+
+  const {
+    isOn: automateInteractivePlayer,
+    intervalWaits: { playerAction: playerActionTimeout },
+  } = useAutomationSettingsStore();
+
   const alreadyRanEffect = useRef(false);
   useEffect(() => {
     if (alreadyRanEffect.current || (player.strategy === 'interactive' && !automateInteractivePlayer) || isReady)
@@ -34,8 +40,17 @@ const useAutomateBetForCountingBots = ({ isReady, setIsReady }: { isReady: boole
       // interactive: () => raiseError(`Invalid strategy ${player.strategy}`),
       interactive: () => calculateBetPerfectBlackjack(),
     }[player.strategy]();
-    setTimeout(async () => placeBet(bet), 500);
-  }, [automateInteractivePlayer, isReady, numberDecksInShoe, player.id, player.strategy, runningCount, send]);
+    setTimeout(async () => placeBet(bet), playerActionTimeout);
+  }, [
+    automateInteractivePlayer,
+    isReady,
+    numberDecksInShoe,
+    player.id,
+    player.strategy,
+    playerActionTimeout,
+    runningCount,
+    send,
+  ]);
 
   const bet = player.hands[0]!.bet;
 

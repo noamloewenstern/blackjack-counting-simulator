@@ -1,44 +1,21 @@
-import { DropdownMenuCheckboxItemProps } from '@radix-ui/react-dropdown-menu';
-import {
-  Cloud,
-  CreditCard,
-  Github,
-  Keyboard,
-  LifeBuoy,
-  LogOut,
-  Mail,
-  MessageSquare,
-  Plus,
-  PlusCircle,
-  Settings,
-  User,
-  UserPlus,
-  Users,
-} from 'lucide-react';
-
 import { Button } from '~/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from '~/components/ui/dropdown-menu';
-import { useSettingsStore } from '~/stores/settingsStore';
+import { useAutomationSettingsStore } from '~/stores/settingsStore';
 
 // type Checked = DropdownMenuCheckboxItemProps['checked'];
 
 export function SettingsDropdownMenu() {
-  const { automateInteractivePlayer, toggleAutomateInteractivePlayer } = useSettingsStore();
-
+  const [automateInteractivePlayer, toggleAutomateInteractivePlayer] = useAutomationSettingsStore(state => [
+    state.isOn,
+    state.toggle,
+  ]);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
