@@ -597,7 +597,12 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         },
         isLastPlayedHand: ({ context }) => {
           const { playerIdx, player, handIdx } = getCurrentTurnHand(context);
-          return playerIdx === context.players.length - 1 && handIdx === player.hands.length - 1;
+          const testAllPlayersFinished = () =>
+            context.players.every(player => player.hands.every(hand => hand.isFinished));
+          return (
+            (playerIdx === context.players.length - 1 && handIdx === player.hands.length - 1) ||
+            testAllPlayersFinished()
+          );
         },
         isNotLastPlayedHand: ({ context }) => {
           const { playerIdx, player, handIdx } = getCurrentTurnHand(context);
