@@ -98,6 +98,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             input: ({ context }: { context: Context }) => ({
               playersIdxs: Array.from({ length: context.players.length }, (_, i) => i),
             }),
+            onDone: 'PlayersTurn',
           },
           on: {
             HIT_PLAYER: {
@@ -106,18 +107,20 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             HIT_DEALER: {
               actions: 'hitDealerHand',
             },
-            FINISHED_DEALING_INIT_CARDS: {
-              target: 'PlayersTurn',
-              guard: 'allPlayersGot2Cards',
-            },
           },
         },
         PlayersTurn: {
-          entry: ['setBlackjackHandsAsFinished'],
+          entry: 'setBlackjackHandsAsFinished',
           initial: 'WaitForPlayerAction',
           states: {
             WaitForPlayerAction: {
-              entry: ['setPlayerHandTurn', 'hitHandIfHasJust1Card', 'setFishedIfIsBlackjack'],
+              entry: pure(({ context }) => {
+                const areAllFinished = context.players.every(player => player.hands.every(hand => hand.isFinished));
+                if (areAllFinished) {
+                  return raise({ type: 'SKIPT_TO_FINAL' });
+                }
+                return ['setPlayerHandTurn', 'hitHandIfHasJust1Card', 'setFinishedIfIsBlackjack', 'standIfIsFinished'];
+              }),
               on: {
                 HIT: {
                   guard: 'canHit',
@@ -142,6 +145,9 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
                 SPLIT: {
                   target: 'SplitHand',
                   guard: 'canSplit',
+                },
+                SKIPT_TO_FINAL: {
+                  target: 'NoMorePlayerActions',
                 },
               },
             },
@@ -256,9 +262,6 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
       },
 
       types: {} as {
-        // input: {
-        //   gameSettings: GameSettings;
-        // };
 
         events:
           | { type: 'START_GAME' }
@@ -278,8 +281,8 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               type: 'HIT_PLAYER';
               params?: hitPlayerHandParams;
             }
-          | { type: 'FINISHED_DEALING_INIT_CARDS' }
           | { type: 'SPLIT' }
+          | { type: 'SKIPT_TO_FINAL' }
           | {
               type: 'PLACE_BET';
               params: {
@@ -421,6 +424,10 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               })),
             })),
         }),
+        skipIfAllAreFinished: /* all have blackjack.  */ pure(({ context }) => {
+          const allPlayersFinished = context.players.every(player => player.hands.every(hand => hand.isFinished));
+          return allPlayersFinished ? [raise({ type: 'STAND' })] : [];
+        }),
         setPlayerHandTurn: assign(({ context }) => {
           for (const [pIdx, player] of context.players.entries()) {
             for (const [hIdx, hand] of player.hands.entries()) {
@@ -431,8 +438,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
               }
             }
           }
-          console.error('No player hand found', context);
-          throw new Error('No player hand found');
+          raiseError('No player hand found');
         }),
         splitHandToTwoHands: assign(({ context }) => {
           const { playerIdx, player, hand, handIdx } = getCurrentTurnHand(context);
@@ -464,10 +470,17 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           }
           return [];
         }),
-        setFishedIfIsBlackjack: pure(({ context }) => {
+        setFinishedIfIsBlackjack: pure(({ context }) => {
           const { hand } = getCurrentTurnHand(context);
           if (isBlackjack(hand.cards)) {
             return ['setHandAsFinished'];
+          }
+          return [];
+        }),
+        standIfIsFinished: pure(({ context }) => {
+          const { hand } = getCurrentTurnHand(context);
+          if (hand.isFinished) {
+            return raise({ type: 'STAND' });
           }
           return [];
         }),
@@ -561,7 +574,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
           await dealToPlayers();
           await dealToDealer();
           await sleep(gameSettings.automation.intervalWaits.betweenPlays);
-          sendBack({ type: 'FINISHED_DEALING_INIT_CARDS' });
+          // sendBack({ type: 'FINISHED_DEALING_INIT_CARDS' });
         }),
       },
       guards: {
@@ -607,6 +620,9 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             (playerIdx === context.players.length - 1 && handIdx === player.hands.length - 1) ||
             testAllPlayersFinished()
           );
+        },
+        allPlayersAreFinished: ({ context }) => {
+          return context.players.every(player => player.hands.every(hand => hand.isFinished));
         },
         isNotLastPlayedHand: ({ context }) => {
           const { playerIdx, player, handIdx } = getCurrentTurnHand(context);
