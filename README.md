@@ -2,10 +2,10 @@
 
 <a name="readme-top"></a>
 
-![NoamLoewenstern - blackjack-counting-simulator](https://img.shields.io/static/v1?label=NoamLoewenstern&message=blackjack-counting-simulator&color=blue&logo=github)
-[![stars - blackjack-counting-simulator](https://img.shields.io/github/stars/NoamLoewenstern/blackjack-counting-simulator?style=social)](https://github.com/NoamLoewenstern/blackjack-counting-simulator)
-[![forks - blackjack-counting-simulator](https://img.shields.io/github/forks/NoamLoewenstern/blackjack-counting-simulator?style=social)](https://github.com/NoamLoewenstern/blackjack-counting-simulator)
-[![License](https://img.shields.io/badge/License-MIT-blue)](#license)
+[![NoamLoewenstern - blackjack-counting-simulator][github-repo-badge]][repo-url]
+[![stars - blackjack-counting-simulator][github-badge-lofo]][repo-url]
+[![forks - blackjack-counting-simulator][github-badge-lofo]][repo-url]
+[![License][license-url]](#license)
 
 [![LinkedIn][linkedin-badge]][linkedin-url]
 
@@ -85,18 +85,18 @@ However, it does have its shortcomings, primarily its documentation and the lack
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
-<!-- ROADMAP -->
+<!-- DEMO -->
 
 ## Demo
 
-<!-- ROADMAP -->
-
-[![hosted-website-badge]](https://blackjack-counting-simulator.vercel.app/)
+[![hosted-website-badge]][hosted-website-url]
 
 ![Website Example Gif][website-flow]
 ![adf][example-mainpage]
 ![adf][example-flow1]
 ![adf][example-flow2]
+
+<!-- ROADMAP -->
 
 ## Roadmap
 
@@ -106,7 +106,7 @@ However, it does have its shortcomings, primarily its documentation and the lack
   - [x] Change speed of game
   - [ ] Allow disable recommended action
 
-See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a full list of proposed features (and known issues).
+See the [open issues][open-issues-url] for a full list of proposed features (and known issues).
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -142,7 +142,10 @@ Released under [MIT](/LICENSE) by [@NoamLoewenstern](https://github.com/NoamLoew
 
 ## Contact
 
-Noam Loewenstern - [Linkedin]() - alias-email: noam-loewenstern-github-alias.voaj5@aleeas.com
+Noam Loewenstern
+
+- [![LinkedIn][linkedin-badge]][linkedin-url]
+- alias-email: noam-loewenstern-github-alias.voaj5@aleeas.com
 
 Project Link: [https://github.com/NoamLoewenstern/blackjack-counting-simulator](https://github.com/NoamLoewenstern/blackjack-counting-simulator)
 
@@ -150,16 +153,23 @@ Project Link: [https://github.com/NoamLoewenstern/blackjack-counting-simulator](
 
 <!-- MARKDOWN LINKS & IMAGES -->
 
+[repo-url]: https://github.com/NoamLoewenstern/blackjack-counting-simulator
+[github-badge-lofo]: https://img.shields.io/github/stars/NoamLoewenstern/blackjack-counting-simulator?style=social
+[github-repo-badge]: https://img.shields.io/static/v1?label=NoamLoewenstern&message=blackjack-counting-simulator&color=blue&logo=github
 [hosted-website-url]: https://blackjack-counting-simulator.vercel.app/
 [hosted-website-badge]: https://img.shields.io/badge/Hosted%20Demo-8A2BE2
 [contributors-url]: https://github.com/NoamLoewenstern/blackjack-counting-simulator/graphs/contributors
-[license-url]: https://github.com/NoamLoewenstern/blackjack-counting-simulator/blob/master/LICENSE.txt
+[open-issues-url]: https://github.com/NoamLoewenstern/blackjack-counting-simulator/issues
+
+<!-- [license-url]: https://github.com/NoamLoewenstern/blackjack-counting-simulator/blob/master/LICENSE.txt -->
+
+[license-url]: https://img.shields.io/badge/License-MIT-blue
 [linkedin-badge]: https://img.shields.io/badge/LinkedIn-0A66C2?logo=linkedin&logoColor=fff&style=for-the-badge
-[linkedin-url]: www.linkedin.com/in/noamlo
+[linkedin-url]: http://linkedin.com/in/noamlo
 [React.js]: https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB
 [React-url]: https://reactjs.org/
 [Typescript]: https://img.shields.io/badge/TypeScript-3178C6.svg?style=for-the-badge&logo=TypeScript&logoColor=white
-[Typescript-url]: https://www.typescriptlang.org/
+[Typescript-url]: https://typescriptlang.org/
 [Vite.js]: https://img.shields.io/badge/Vite-646CFF.svg?style=for-the-badge&logo=Vite&logoColor=white
 [Vite-url]: https://vitejs.dev/
 [xstate]: https://img.shields.io/badge/XState-2C3E50.svg?style=for-the-badge&logo=XState&logoColor=white
