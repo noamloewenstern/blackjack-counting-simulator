@@ -1,79 +1,63 @@
 import { useMemo } from 'react';
-import { Card, Hand } from './deck';
+import { type Card } from './deck';
 import { LRUCache } from 'lru-cache';
+import { groupBy, raiseError } from '~/utils/helpers';
 
-type getCardValuesArgs = [Parameters<typeof getCardValues>[0], ReturnType<typeof getCardValues>];
-const getCardValuesCache = new LRUCache<getCardValuesArgs[0], getCardValuesArgs[1]>({ max: 1000 });
-export function getCardValues(cValue: Card['number']): number[] {
-  const cachedValue = getCardValuesCache.get(cValue);
-  if (cachedValue) return cachedValue;
-  let cardValue: number[];
-  switch (cValue) {
-    case 'A':
-      cardValue = [1, 11];
-      break;
-    case '2':
-      cardValue = [2];
-      break;
-    case '3':
-      cardValue = [3];
-      break;
-    case '4':
-      cardValue = [4];
-      break;
-    case '5':
-      cardValue = [5];
-      break;
-    case '6':
-      cardValue = [6];
-      break;
-    case '7':
-      cardValue = [7];
-      break;
-    case '8':
-      cardValue = [8];
-      break;
-    case '9':
-      cardValue = [9];
-      break;
-    case '10':
-    case 'T':
-    case 'J':
-    case 'Q':
-    case 'K':
-      cardValue = [10];
-      break;
-    default:
-      throw new Error(`Unknown card: ${cValue}`);
-  }
-  getCardValuesCache.set(cValue, cardValue);
+// type getCardValuesArgs = [Parameters<typeof getCardValues>[0], ReturnType<typeof getCardValues>];
+const mappedCardValue = {
+  '2': 2,
+  '3': 3,
+  '4': 4,
+  '5': 5,
+  '6': 6,
+  '7': 7,
+  '8': 8,
+  '9': 9,
+  '10': 10,
+  T: 10,
+  J: 10,
+  Q: 10,
+  K: 10,
+} as const;
+// const getCardValuesCache = new LRUCache<getCardValuesArgs[0], getCardValuesArgs[1]>({ max: 1000 });
+export function getCardValues(cValue: Card['value']): readonly number[] {
+  const cardValue =
+    cValue === 'A' ? ([1, 11] as const) : ([mappedCardValue[cValue] ?? raiseError('Error Value')] as const);
+
   return cardValue;
 }
-
-function handToNumberHand(hand: Card[] | Card['number'][]) {
+function handToNumberHand(hand: Card[] | Card['value'][]) {
   if (typeof hand[0] === 'object') {
-    hand = (hand as Card[]).map(card => card.number);
+    hand = (hand as Card[]).map(card => card.value);
   } else {
-    hand = hand as Card['number'][];
+    hand = hand as Card['value'][];
   }
   return hand;
 }
-const calculateHandCache = new LRUCache<string, ReturnType<typeof calculateHand>>({ max: 2000 });
-export function calculateHand(hand: Card[] | Card['number'][]): {
+const calculateHandCache = new LRUCache<string, ReturnType<typeof calcHandCount>>({ max: 2000 });
+export function calcHandCount(cards: Card[] | Card['value'][]): {
   validCounts: number[];
   bustCount: number;
 } {
-  let totals = [0];
-  if (hand.length === 0) {
+  if (cards.length === 0) {
     throw new Error('Hand must have at least one card');
   }
-  const newHand = handToNumberHand(hand);
+  const newHand = handToNumberHand(cards);
   const cachedKey = [...newHand].sort().join(',');
   const cachedResult = calculateHandCache.get(cachedKey);
   if (cachedResult) {
     return cachedResult;
   }
 
+  if (!newHand.includes('A')) {
+    const total = newHand.reduce((a, b) => a + getCardValues(b)![0]!, 0);
+    return {
+      validCounts: total <= 21 ? [total] : [],
+      bustCount: total > 21 ? total : 0,
+    };
+  }
+
+  let totals = [0];
   for (const card of newHand) {
     const newTotals = [];
     const cardValues = getCardValues(card);
@@ -85,26 +69,30 @@ export function calculateHand(hand: Card[] | Card['number'][]): {
     // remove duplicates and sort
     totals = [...new Set(newTotals)].sort((a, b) => a - b);
   }
-  const validTotals = totals.filter(total => total <= 21).sort((a, b) => b - a); // reverse sort
+  // const validTotals = totals.filter(total => total <= 21).sort((a, b) => b - a); // reverse sort
+  const groupsCounts = groupBy(
+    totals.sort((a, b) => b - a),
+    total => (total <= 21 ? 'validCounts' : 'bustCount'),
+  );
   const result = {
-    validCounts: validTotals,
-    bustCount: totals[0],
+    validCounts: groupsCounts.get('validCounts') ?? [],
+    bustCount: [...(groupsCounts.get('bustCount') || [])].sort()?.[0] ?? 0,
   };
   calculateHandCache.set(cachedKey, result);
   return result;
 }
 
-export function isBlackJack(hand: Card[] | Card['number'][]) {
+export function isBlackjack(hand: Card[] | Card['value'][]) {
   if (hand.length !== 2) {
     return false;
   }
   hand = handToNumberHand(hand);
-  const { validCounts } = calculateHand(hand);
+  const { validCounts } = calcHandCount(hand);
   return validCounts[0] === 21;
 }
 
-export function useHasBlackjack(hand: Hand) {
+export function useHasBlackjack(hand: Card[]) {
   return useMemo(() => {
-    return hand.length === 2 && calculateHand(hand).validCounts[0] === 21;
+    return hand.length === 2 && calcHandCount(hand).validCounts[0] === 21;
   }, [hand]);
 }

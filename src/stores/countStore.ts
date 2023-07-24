@@ -1,8 +1,9 @@
 import { useSettingsStore } from './settingsStore';
 import { create } from 'zustand';
-import { Card } from '../lib/deck';
+import type { Card } from '../lib/deck';
 import { immer } from 'zustand/middleware/immer';
-import { calcHiLowCount } from '../lib/strategies/utils';
+import { COUNTING_STRATEGIES } from '../lib/strategies/utils';
+import { roundToNearestHalf } from '~/lib/utils';
 
 type CountStore = {
   runningCount: number;
@@ -13,17 +14,16 @@ type Actions = {
   resetCount: () => void;
 };
 
-export const useCountStore = create(
+export const useRunningCount = create(
   immer<CountStore & Actions>((set, get) => ({
     runningCount: 0,
     getAbsoluteCount: () => {
-      const { numberDecksInShoe: numberOfDecks } = useSettingsStore.getState();
-      return get().runningCount / numberOfDecks;
+      const { numberDecksInShoe } = useSettingsStore.getState();
+      return roundToNearestHalf(get().runningCount / numberDecksInShoe);
     },
     updateCount: card => {
-      if (!card.isVisible) return;
       set(state => {
-        state.runningCount += calcHiLowCount(card);
+        state.runningCount += COUNTING_STRATEGIES.calculate['Hi-Lo'](card);
       });
     },
     resetCount: () => {
