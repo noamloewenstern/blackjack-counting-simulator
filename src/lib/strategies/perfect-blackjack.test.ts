@@ -1,4 +1,4 @@
-import { ActionSettings, getActionByStrategy, isSoftHand, getSplitAction } from './perfect-blackjack';
+import { getActionByStrategy, isSoftHand, getSplitAction } from './perfect-blackjack';
 
 const settings = {
   allowedToDouble: true,

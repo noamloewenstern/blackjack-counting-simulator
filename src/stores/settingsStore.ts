@@ -39,13 +39,13 @@ export const useSettingsStore = create(
       setNumberOfDecks: (numberOfDecks: number) => set({ numberDecksInShoe: numberOfDecks }),
       reset: (newState = {}) => {
         localStorage.removeItem('settings');
-        set(state => ({
+        set({
           numberDecksInShoe: 6,
           dealerMustHitOnSoft17: true,
           allowedToDoubleAfterSplit: true,
           allowedToDouble: true,
           ...newState,
-        }));
+        });
       },
     })),
     {

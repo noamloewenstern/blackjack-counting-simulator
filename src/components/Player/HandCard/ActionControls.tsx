@@ -3,7 +3,7 @@ import { useAutomationSettingsStore, useSettingsStore } from '~/stores/settingsS
 import { useDealerCount } from '~/lib/hooks/useDealerCount';
 import usePlayerHand from '../hooks/usePlayerHand';
 import { useEffect, useMemo } from 'react';
-import { Card } from '~/lib/deck';
+import { type Card } from '~/lib/deck';
 
 /* AutomatePlayerActionForBots */
 function useAutoPlayAction({ recommendedAction }: { recommendedAction: ReturnType<typeof useGetRecommendedAction> }) {
@@ -59,7 +59,7 @@ function useGetRecommendedAction({ cards }: { cards: Card[] }) {
   return recommendedAction;
 }
 export default function ActionControls() {
-  const { hand, isHandCurrentTurn, canDouble, canSplit, actions, player } = usePlayerHand();
+  const { hand, isHandCurrentTurn, canDouble, canSplit, actions } = usePlayerHand();
   const { hit, double, stand, split } = actions;
   const { cards } = hand;
 

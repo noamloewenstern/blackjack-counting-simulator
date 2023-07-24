@@ -1,6 +1,6 @@
 import { Label } from '~/components/ui/label';
 import { Switch } from '~/components/ui/switch';
-import { useAutomationSettingsStore, useSettingsStore } from '~/stores/settingsStore';
+import { useAutomationSettingsStore } from '~/stores/settingsStore';
 
 export default function AutoPlayToggle() {
   const [automateInteractivePlayer, toggleAutomateInteractivePlayer] = useAutomationSettingsStore(state => [
