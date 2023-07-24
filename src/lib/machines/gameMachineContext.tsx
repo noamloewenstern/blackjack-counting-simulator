@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useActor } from '@xstate/react';
 import { createContext, useContext, useMemo } from 'react';
-import { Player, createGameMachine } from './gameMachine';
+import { type Player, createGameMachine } from './gameMachine';
 import { useDeckStore } from '~/stores/deckStore';
 import { useAutomationSettingsStore, useSettingsStore } from '~/stores/settingsStore';
 import { useRunningCount } from '~/stores/countStore';

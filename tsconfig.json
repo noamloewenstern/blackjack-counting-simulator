@@ -1,38 +1,35 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "module": "ESNext",
+    "target": "esnext",
+    "lib": ["dom", "dom.iterable", "esnext"],
+    "module": "esnext",
     "skipLibCheck": true,
     /* Bundler mode */
     "moduleResolution": "bundler",
-    "sourceMap": true,
+    // "sourceMap": true,
     "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
+    // "composite": true,
+    "allowJs": true,
+    "checkJs": true,
     /* Linting */
-    "strict": true,
     // "noUnusedLocals": true,
     // "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
-    // "allowJs": true,
-    // "checkJs": true,
+    "baseUrl": ".",
+    "strict": true,
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,
     "incremental": true,
     "noUncheckedIndexedAccess": true,
-    "baseUrl": ".",
+
     "paths": {
       "~/*": ["./src/*"]
     }
   },
-  "include": ["src"],
-  "references": [
-    {
-      "path": "./tsconfig.node.json"
-    }
-  ],
+  "include": ["src", "vite.config.ts"],
   "exclude": ["node_modules"]
 }

@@ -1,4 +1,4 @@
-import { Card, CardValue, Deck, createDeck } from '~/lib/deck';
+import type { Card, CardValue, Deck } from '~/lib/deck';
 const defaultNumberPlayers = 4;
 
 type TestDeck = {

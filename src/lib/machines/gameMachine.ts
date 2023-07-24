@@ -1,11 +1,11 @@
 import { pure, assign, choose, createMachine, fromCallback, fromPromise, log, raise } from 'xstate';
-import { BlackjackStrategy } from '../strategies/utils';
+import { type BlackjackStrategy } from '../strategies/utils';
 import { raiseError, sleep } from '~/utils/helpers';
 import type { Card, Deck, Hand, RoundHandResult } from '../deck';
 import { calcHandCount, isBlackjack } from '../calculateHand';
 import { calcHandInfo, calcHandRoundResult, dealerHasFinalHand } from './utils';
 import { doesShoeNeedShuffle } from '~/utils/gameRules';
-import { AutomateStore, SettingsStore } from '~/stores/settingsStore';
+import type { AutomateStore, SettingsStore } from '~/stores/settingsStore';
 
 export type Player = {
   id: string;
@@ -337,7 +337,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
             }),
           };
         }),
-        hitDealerHand: assign(({ context, event }) => {
+        hitDealerHand: assign(({ context }) => {
           const isFirstCard = context.dealer.hand.cards.length === 0;
           const visible = !isFirstCard;
           const card = deck.drawCard({ visible });
@@ -521,7 +521,7 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         }),
         clearForNewRound: assign({
           players: ({ context }) =>
-            context.players.map((player, idx) => ({
+            context.players.map(player => ({
               ...player,
               hands: [
                 {
@@ -576,11 +576,11 @@ export const createGameMachine = ({ deck, gameSettings, initContext, updateRunni
         }),
       },
       guards: {
-        canHit: ({ context, event }) => {
+        canHit: ({ context }) => {
           const { hand } = getCurrentTurnHand(context);
           return calcHandCount(hand.cards).validCounts.length > 0;
         },
-        canDouble: ({ context, event }) => {
+        canDouble: ({ context }) => {
           const { hand } = getCurrentTurnHand(context);
           return hand.cards.length === 2;
         },
