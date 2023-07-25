@@ -31,7 +31,11 @@
     <a href="https://github.com/NoamLoewenstern/blackjack-counting-simulator/issues">Request Feature</a>
   </p>
 </div>
+<br />
 
+[![Website Example Gif][website-flow]][hosted-website-url]
+
+<br />
 <!-- TABLE OF CONTENTS -->
 <details>
   <summary>Table of Contents</summary>
